@@ -1,12 +1,17 @@
 package com.jamaln.notesndtodos.data.local.repository
 
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
 import com.jamaln.notesndtodos.data.local.dao.NoteDao
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.NoteWithTags
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.data.model.TagWithNotes
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteRepository {
@@ -19,8 +24,12 @@ class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteR
         return noteDao.getNoteWithTags(noteId)
     }
 
-    override fun getTagWithNotes(tagName: String): Flow<List<TagWithNotes>> {
-        return noteDao.getTagWithNotes(tagName)
+    override fun getTagWithNotes(tagName: String): Flow<PagingData<TagWithNotes>> {
+        return Pager(
+            PagingConfig(pageSize = 10, prefetchDistance = 20),
+        ){
+            noteDao.getTagWithNotes(tagName)
+        }.flow.flowOn(Dispatchers.IO)
     }
 
     override fun getAllNotes(): Flow<List<Note>> {

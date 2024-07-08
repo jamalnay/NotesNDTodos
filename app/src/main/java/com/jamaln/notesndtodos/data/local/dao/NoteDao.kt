@@ -1,5 +1,6 @@
 package com.jamaln.notesndtodos.data.local.dao
 
+import androidx.paging.PagingSource
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -42,7 +43,7 @@ interface NoteDao {
 
     @Transaction
     @Query("SELECT * FROM tags WHERE tag_name = :tagName")
-    fun getTagWithNotes(tagName: String): Flow<List<TagWithNotes>>
+    fun getTagWithNotes(tagName: String): PagingSource<Int,TagWithNotes>
 
 
     @Query("SELECT * FROM notes")

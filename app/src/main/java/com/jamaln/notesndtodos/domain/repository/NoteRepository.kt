@@ -1,5 +1,6 @@
 package com.jamaln.notesndtodos.domain.repository
 
+import androidx.paging.PagingData
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.NoteWithTags
 import com.jamaln.notesndtodos.data.model.Tag
@@ -12,7 +13,7 @@ interface NoteRepository {
 
     fun getNoteWithTags(noteId: Int): Flow<List<NoteWithTags>>
 
-    fun getTagWithNotes(tagName: String): Flow<List<TagWithNotes>>
+    fun getTagWithNotes(tagName: String): Flow<PagingData<TagWithNotes>>
 
     fun getAllNotes(): Flow<List<Note>>
 

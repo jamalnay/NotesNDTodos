@@ -3,6 +3,8 @@ package com.jamaln.notesndtodos.presentation.home
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.data.model.TagWithNotes
@@ -10,9 +12,11 @@ import com.jamaln.notesndtodos.domain.repository.NoteRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -22,14 +26,30 @@ class NoteViewModel @Inject constructor(
     private val noteRepository: NoteRepository
 ) : ViewModel(){
 
-    private val _notes = MutableStateFlow<List<TagWithNotes>>(emptyList())
-    val notes: StateFlow<List<TagWithNotes>> = _notes
+    private val _notes = MutableStateFlow<PagingData<TagWithNotes>>(PagingData.empty())
+    val notes = _notes.asStateFlow()
 
     private val _tags = MutableStateFlow<List<Tag>>(emptyList())
-    val tags: StateFlow<List<Tag>> = _tags
+    val tags = _tags.asStateFlow()
+
+    private val _selectedTag = MutableStateFlow(Tag("all"))
+    val selectedTag = _selectedTag.asStateFlow()
 
 
     init {
+        insertBulkNotes()
+        onEvent(HomeEvents.GetAllNotes)
+    }
+
+    fun onEvent(event: HomeEvents){
+        when(event){
+            is HomeEvents.GetAllNotes -> getNotesForTag(Tag("all"))
+            is HomeEvents.GetAllTags -> getTags()
+            is HomeEvents.GetNotesForTag -> getNotesForTag(event.tag)
+        }
+    }
+
+    private fun getTags(){
         viewModelScope.launch {
             noteRepository.getTagsWithNotes()
                 .flowOn(Dispatchers.IO)
@@ -41,21 +61,21 @@ class NoteViewModel @Inject constructor(
         }
     }
 
-    fun showNotesForTag(tag: Tag) {
+    private fun getNotesForTag(tag: Tag) {
         viewModelScope.launch {
-            noteRepository.getTagWithNotes(tag.tagName)
-                .flowOn(Dispatchers.IO)
-                .catch { e ->
-                    Log.d(NOTEVIEWMODEL_TAG, "Error fetching notes", e)
-                }
-                .collect{
+            noteRepository.getTagWithNotes(tag.tagName).cachedIn(viewModelScope)
+                .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = PagingData.empty()
+            ).collect{
                 _notes.value = it
             }
         }
     }
 
 
-    fun insertRandomNotes(){
+    private fun insertBulkNotes(){
         val randomNotes = listOf(
             Pair(
                 Note(0, "Work Note", "Work-related tasks",
