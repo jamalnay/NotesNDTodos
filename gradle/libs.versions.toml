@@ -62,7 +62,8 @@ accompanist-permissions = { module = "com.google.accompanist:accompanist-permiss
 androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
 #Paging
-compose-paging3 = { module = "androidx.paging:paging-compose",version.ref = "paging3"}
+compose-paging = { module = "androidx.paging:paging-compose",version.ref = "paging3"}
+paging-room = { module = "androidx.room:room-paging",version.ref = "room"}
 
 
 [plugins]

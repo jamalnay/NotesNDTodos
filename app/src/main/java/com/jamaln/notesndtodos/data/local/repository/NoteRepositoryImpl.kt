@@ -24,12 +24,8 @@ class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteR
         return noteDao.getNoteWithTags(noteId)
     }
 
-    override fun getTagWithNotes(tagName: String): Flow<PagingData<TagWithNotes>> {
-        return Pager(
-            PagingConfig(pageSize = 10, prefetchDistance = 20),
-        ){
-            noteDao.getTagWithNotes(tagName)
-        }.flow.flowOn(Dispatchers.IO)
+    override suspend fun getTagWithNotes(tagName: String): TagWithNotes? {
+        return noteDao.getTagWithNotes(tagName)
     }
 
     override fun getAllNotes(): Flow<List<Note>> {

@@ -13,7 +13,7 @@ interface NoteRepository {
 
     fun getNoteWithTags(noteId: Int): Flow<List<NoteWithTags>>
 
-    fun getTagWithNotes(tagName: String): Flow<PagingData<TagWithNotes>>
+    suspend fun getTagWithNotes(tagName: String): TagWithNotes?
 
     fun getAllNotes(): Flow<List<Note>>
 

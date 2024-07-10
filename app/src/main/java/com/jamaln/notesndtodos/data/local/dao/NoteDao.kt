@@ -43,7 +43,7 @@ interface NoteDao {
 
     @Transaction
     @Query("SELECT * FROM tags WHERE tag_name = :tagName")
-    fun getTagWithNotes(tagName: String): PagingSource<Int,TagWithNotes>
+    suspend fun getTagWithNotes(tagName: String): TagWithNotes?
 
 
     @Query("SELECT * FROM notes")

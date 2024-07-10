@@ -1,4 +1,4 @@
-package com.jamaln.notesndtodos.ui.theme
+package com.jamaln.notesndtodos.presentation.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -12,11 +12,15 @@ private val DarkColorScheme = darkColorScheme(
     primaryContainer = PrimaryContainerDark,
     onPrimaryContainer = OnPrimaryContainerDark,
     secondary = SecondaryDark,
-    onSecondary = onSecondaryDark,
-    tertiary = TertiaryContainerDark,
-    onTertiary = OnTertiaryContainerDark,
+    onSecondary = OnSecondaryDark,
+    secondaryContainer = SecondaryContainerDark,
+    onSecondaryContainer = onSecondaryContainerDark,
+    tertiaryContainer = TertiaryContainerDark,
+    onTertiaryContainer = OnTertiaryContainerDark,
     surface = SurfaceDark,
-    onSurface = OnSurfaceDark
+    onSurface = OnSurfaceDark,
+    surfaceContainer = SurfaceContainerDark,
+    error = ErrorDark
 )
 
 private val LightColorScheme = lightColorScheme(
@@ -26,10 +30,14 @@ private val LightColorScheme = lightColorScheme(
     onPrimaryContainer = OnPrimaryContainerLight,
     secondary = SecondaryLight,
     onSecondary = onSecondaryLight,
-    tertiary = TertiaryContainerLight,
-    onTertiary = OnTertiaryContainerLight,
+    secondaryContainer = SecondaryContainerLight,
+    onSecondaryContainer = OnSecondaryContainerLight,
+    tertiaryContainer = TertiaryContainerLight,
+    onTertiaryContainer = OnTertiaryContainerLight,
     surface = SurfaceLight,
-    onSurface = OnSurfaceLight
+    onSurface = OnSurfaceLight,
+    surfaceContainer = SurfaceContainerLight,
+    error = ErrorLight
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),

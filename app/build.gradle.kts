@@ -87,6 +87,7 @@ dependencies {
     implementation(libs.compose.lifeCycle.runtime)
 
     //Paging 3
-    implementation(libs.compose.paging3)
+    implementation(libs.compose.paging)
+    implementation(libs.paging.room)
 
 }

@@ -19,20 +19,20 @@ const val DATABASE_NAME = "notes_database"
     version = 1,
     exportSchema = false)
 @TypeConverters(FilesPathsConverters::class)
-abstract class NotesDatabase : RoomDatabase() {
+abstract class NoteDatabase : RoomDatabase() {
     abstract fun noteDao(): NoteDao
 
     companion object {
         @Volatile
-        private var instance: NotesDatabase? = null
-        fun getInstance(context: Context): NotesDatabase {
+        private var instance: NoteDatabase? = null
+        fun getInstance(context: Context): NoteDatabase {
             return instance ?: synchronized(this) {
                 instance ?: buildDatabase(context).also { instance = it }
             }
         }
 
-        private fun buildDatabase(context: Context): NotesDatabase {
-            return Room.databaseBuilder(context, NotesDatabase::class.java, DATABASE_NAME)
+        private fun buildDatabase(context: Context): NoteDatabase {
+            return Room.databaseBuilder(context, NoteDatabase::class.java, DATABASE_NAME)
                 .build()
         }
     }
