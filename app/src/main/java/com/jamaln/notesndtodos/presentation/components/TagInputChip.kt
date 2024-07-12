@@ -43,7 +43,8 @@ fun TagInputChip(
             containerColor = MaterialTheme.colorScheme.secondary,
             selectedContainerColor = MaterialTheme.colorScheme.secondary,
             labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = MaterialTheme.colorScheme.onSurface
+            selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.onSurface,
         ),
         trailingIcon = {
             if(selected){

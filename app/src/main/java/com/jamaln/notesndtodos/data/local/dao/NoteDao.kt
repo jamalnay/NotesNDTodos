@@ -1,7 +1,7 @@
 package com.jamaln.notesndtodos.data.local.dao
 
-import androidx.paging.PagingSource
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -38,7 +38,7 @@ interface NoteDao {
 
     @Transaction
     @Query("SELECT * FROM notes WHERE note_id = :noteId")
-    fun getNoteWithTags(noteId: Int): Flow<List<NoteWithTags>>
+    suspend fun getNoteWithTags(noteId: Int): NoteWithTags?
 
 
     @Transaction
@@ -61,4 +61,15 @@ interface NoteDao {
         INNER JOIN notes ON notes.note_id = NoteTagCrossRef.note_id
     """)
     fun getTagsWithNotes(): Flow<List<Tag>>
+
+    @Query("SELECT * FROM notes WHERE title LIKE '%' || :query || '%' OR content_text LIKE '%' || :query || '%'")
+    fun searchNotes(query: String): Flow<List<Note>?>
+
+    @Delete
+    suspend fun deleteNote(note: Note)
+
+    @Transaction
+    @Query("DELETE FROM NoteTagCrossRef WHERE note_id = :noteId")
+    suspend fun deleteNoteWithTags(noteId:Int)
+
 }

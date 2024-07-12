@@ -1,7 +1,6 @@
 package com.jamaln.notesndtodos.presentation.screens
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
-import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -25,7 +23,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -41,12 +38,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jamaln.notesndtodos.R
-import com.jamaln.notesndtodos.presentation.NoteViewModel
+import com.jamaln.notesndtodos.presentation.HomeViewModel
 import com.jamaln.notesndtodos.presentation.components.LargeNoteCard
 import com.jamaln.notesndtodos.presentation.components.SearchBar
 import com.jamaln.notesndtodos.presentation.components.TagFilterChip
@@ -57,13 +53,13 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    toggleDarkMode: () -> Unit,
-    noteViewModel: NoteViewModel = hiltViewModel(),
+    homeViewModel: HomeViewModel = hiltViewModel(),
+    onNoteClick: (Int) -> Unit,
 ) {
-    val notesState by noteViewModel.notesListState.collectAsStateWithLifecycle()
-    val tagsState by noteViewModel.tagsState.collectAsStateWithLifecycle()
-    val darkModeState by noteViewModel.darkModeState.collectAsStateWithLifecycle()
-    val searchBarState by noteViewModel.searchBarState.collectAsStateWithLifecycle()
+    val notesState by homeViewModel.notesState.collectAsStateWithLifecycle()
+    val tagsState by homeViewModel.tagsState.collectAsStateWithLifecycle()
+    val darkModeState by homeViewModel.darkModeState.collectAsStateWithLifecycle()
+    val searchBarState by homeViewModel.searchBarState.collectAsStateWithLifecycle()
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
 
@@ -74,7 +70,7 @@ fun HomeScreen(
             FloatingActionButton(
                 modifier = Modifier.size(72.dp),
                 shape = CircleShape,
-                onClick = { /*TODO*/ }
+                onClick = { onNoteClick(0) }
             ) {
                 Icon(
                     modifier = Modifier.size(32.dp),
@@ -92,8 +88,8 @@ fun HomeScreen(
             ) {
                 SearchBar(
                     value = searchBarState.searchQuery,
-                    onValueChange = { noteViewModel.onEvent(HomeEvents.OnSearchQueryChange(it)) },
-                    onQueryClear = { noteViewModel.onEvent(HomeEvents.OnSearchQueryClear) },
+                    onValueChange = { homeViewModel.onEvent(HomeEvents.OnSearchQueryChange(it)) },
+                    onQueryClear = { homeViewModel.onEvent(HomeEvents.OnSearchQueryClear) },
                     label = "Search...",
                     modifier = Modifier.weight(1f)
                 )
@@ -103,8 +99,7 @@ fun HomeScreen(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.tertiaryContainer),
                     onClick = {
-                        noteViewModel.onEvent(HomeEvents.OnDarkModeToggle)
-                        toggleDarkMode()
+                        homeViewModel.onEvent(HomeEvents.OnDarkModeToggle)
                     }
                 ) {
                     Icon(
@@ -176,12 +171,12 @@ fun HomeScreen(
                                 .horizontalScroll(rememberScrollState())
                                 .padding(start = 20.dp, top = 16.dp, end = 20.dp),
                         ) {
-                            //We want "All Notes" to be the first tag to appear
+                            //We want "All Notes" to be the first tag to in the tags list
                             tagsState.tags.sortedWith(compareBy { it.tagName != "All Notes" }).forEach { tag ->
                                 TagFilterChip(
                                     tagName = ("#").plus(tag.tagName),
                                     selected = tag == tagsState.selectedTag,
-                                    onClick = { noteViewModel.onEvent(HomeEvents.GetNotesForTag(tag)) }
+                                    onClick = { homeViewModel.onEvent(HomeEvents.GetNotesForTag(tag)) }
                                 )
                             }
                         }
@@ -195,35 +190,14 @@ fun HomeScreen(
                             verticalItemSpacing = 24.dp,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            if (notesState.notes.notes.isNotEmpty()){
-                                notesState.notes.notes.size.let { it ->
-                                    items(count = it, key = { notesState.notes.notes[it].noteId } ) { index ->
+                            if (notesState.notes.isNotEmpty()){
+                                notesState.notes.size.let { it ->
+                                    items(count = it, key = { notesState.notes[it].noteId } ) { index ->
                                         LargeNoteCard(
                                             modifier = Modifier.animateItemPlacement(),
-                                            note = notesState.notes.notes[index],
-                                            onClick = {}
+                                            note = notesState.notes[index],
+                                            onClick = {onNoteClick(notesState.notes[index].noteId)}
                                         )
-                                    }
-                                }
-                            }
-                            item(
-                                span = StaggeredGridItemSpan.FullLine
-                            ) {
-                                if (notesState.notes.notes.isEmpty()){
-                                    Column(
-                                        modifier = Modifier.fillMaxSize(),
-                                        verticalArrangement = Arrangement.Center,
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Image(
-                                            modifier = Modifier.padding(vertical = 48.dp),
-                                            painter = painterResource(id = if (darkModeState.isInDarkMode) R.drawable.no_notes_dark
-                                        else R.drawable.no_notes_light),
-                                            contentDescription = ""
-                                        )
-                                        Text(text = "Oops!", style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Light))
-                                        Text(text = "You have no notes", style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Light))
-                                        Text(modifier = Modifier.padding(vertical = 48.dp), text = "Start by creating a new note.", style = MaterialTheme.typography.labelLarge)
                                     }
                                 }
                             }

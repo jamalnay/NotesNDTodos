@@ -25,6 +25,7 @@ fun TagFilterChip(
     tagName:String,
     selected: Boolean,
     onClick:(String) -> Unit,
+    enabled: Boolean = true
 ){
     FilterChip(
         modifier = modifier.padding(end = 16.dp),
@@ -44,15 +45,13 @@ fun TagFilterChip(
             containerColor = MaterialTheme.colorScheme.secondary,
             selectedContainerColor = MaterialTheme.colorScheme.primary,
             labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedLabelColor = if (!isSystemInDarkTheme()) Color.White else MaterialTheme.colorScheme.onSurface
+            selectedLabelColor = if (!isSystemInDarkTheme()) Color.White else MaterialTheme.colorScheme.onSurface,
+            disabledContainerColor = MaterialTheme.colorScheme.secondary,
+            disabledLabelColor = MaterialTheme.colorScheme.onSurface,
         ),
-        elevation = FilterChipDefaults.filterChipElevation(elevation = 1.dp)
+        elevation = FilterChipDefaults.filterChipElevation(elevation = 1.dp),
+        enabled = enabled
     )
-}
-
-@Composable
-fun NewInputShipButton(){
-
 }
 
 @PreviewDarkLight

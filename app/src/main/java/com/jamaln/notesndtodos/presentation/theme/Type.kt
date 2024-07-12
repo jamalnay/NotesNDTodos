@@ -3,28 +3,23 @@ package com.jamaln.notesndtodos.presentation.theme
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import com.jamaln.notesndtodos.R
-
-val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs
-)
+import androidx.compose.ui.text.font.Font
 
 val bodyFontFamily = FontFamily(
-    Font(
-        googleFont = GoogleFont("Poppins"),
-        fontProvider = provider,
-    )
+    Font(R.font.poppins_light, FontWeight.Light),
+    Font(R.font.poppins_regular, FontWeight.Normal),
+    Font(R.font.poppins_medium, FontWeight.Medium),
+    Font(R.font.poppins_semibold, FontWeight.SemiBold),
+    Font(R.font.poppins_bold, FontWeight.Bold)
 )
 
 val displayFontFamily = FontFamily(
-    Font(
-        googleFont = GoogleFont("Rubik"),
-        fontProvider = provider,
-    )
+    Font(R.font.rubik_light, FontWeight.Light),
+    Font(R.font.rubik_regular, FontWeight.Normal),
+    Font(R.font.rubik_medium, FontWeight.Medium),
+    Font(R.font.rubik_semibold, FontWeight.SemiBold),
+    Font(R.font.rubik_bold, FontWeight.Bold)
 )
 
 // Default Material 3 typography values
@@ -34,9 +29,9 @@ val Typography = Typography(
     displayLarge = baseline.displayLarge.copy(fontFamily = displayFontFamily),
     displayMedium = baseline.displayMedium.copy(fontFamily = displayFontFamily,fontWeight = FontWeight.Light),
     displaySmall = baseline.displaySmall.copy(fontFamily = displayFontFamily),
-    headlineLarge = baseline.headlineLarge.copy(fontFamily = displayFontFamily),
-    headlineMedium = baseline.headlineMedium.copy(fontFamily = displayFontFamily),
-    headlineSmall = baseline.headlineSmall.copy(fontFamily = displayFontFamily),
+    headlineLarge = baseline.headlineLarge.copy(fontFamily = bodyFontFamily),
+    headlineMedium = baseline.headlineMedium.copy(fontFamily = bodyFontFamily),
+    headlineSmall = baseline.headlineSmall.copy(fontFamily = bodyFontFamily),
     titleLarge = baseline.titleLarge.copy(fontFamily = bodyFontFamily),
     titleMedium = baseline.titleMedium.copy(fontFamily = bodyFontFamily),
     titleSmall = baseline.titleSmall.copy(fontFamily = bodyFontFamily),

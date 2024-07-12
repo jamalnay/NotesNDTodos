@@ -6,162 +6,146 @@ import androidx.lifecycle.viewModelScope
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
-import com.jamaln.notesndtodos.presentation.events.HomeEvents
-import com.jamaln.notesndtodos.presentation.state.UiState
+import com.jamaln.notesndtodos.presentation.events.NoteEvents
+import com.jamaln.notesndtodos.presentation.state.NoteUiState
+import com.jamaln.notesndtodos.utils.NoteUtils.Companion.capitalizeFirstLetter
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
+
 import javax.inject.Inject
 
 const val NOTE_VIEWMODEL = "NoteViewModel"
 @HiltViewModel
 class NoteViewModel @Inject constructor(
     private val noteRepository: NoteRepository
-) : ViewModel(){
+):ViewModel() {
 
-    private val _notesListState = MutableStateFlow(UiState.NotesListState())
-    val notesListState = _notesListState.asStateFlow()
+    private val _noteState = MutableStateFlow(NoteUiState.NoteState())
+    val noteState = _noteState.asStateFlow()
 
-    private val _tagsState = MutableStateFlow(UiState.TagsState())
+    private val _noteEditingState = MutableStateFlow(NoteUiState.NoteEditingState())
+    val noteEditingState = _noteEditingState.asStateFlow()
+
+    private val _titleState = MutableStateFlow(NoteUiState.NoteTitleState())
+    val titleState = _titleState.asStateFlow()
+
+    private val _contentTextState = MutableStateFlow(NoteUiState.NoteContentState())
+    val contentTextState = _contentTextState.asStateFlow()
+
+    private val _tagsState = MutableStateFlow(NoteUiState.NoteTagsState())
     val tagsState = _tagsState.asStateFlow()
 
-    private val _darkModeState = MutableStateFlow(UiState.DarkModeState())
-    val darkModeState = _darkModeState.asStateFlow()
+    private val _selectedTagsState = MutableStateFlow(NoteUiState.SelectedTagsState())
+    val selectedTagsState = _selectedTagsState.asStateFlow()
 
-    private val _searchBarState = MutableStateFlow(UiState.SearchBarState())
-    val searchBarState = _searchBarState.asStateFlow()
+    private val _newTagState = MutableStateFlow(NoteUiState.NewTagState())
+    val newTagState = _newTagState.asStateFlow()
 
-    private val _tabState = MutableStateFlow(UiState.TabState())
-    val tabState = _tabState.asStateFlow()
+    private val _deleteDialogState = MutableStateFlow(NoteUiState.NoteDeleteState())
+    val deleteDialogState = _deleteDialogState.asStateFlow()
 
 
-    init {
-//        insertBulkNotes()
-        onEvent(HomeEvents.GetAllNotes)
-        onEvent(HomeEvents.GetAllTags)
-    }
-
-    fun onEvent(event: HomeEvents){
+    fun onEvent(event: NoteEvents){
         when(event){
-            is HomeEvents.GetAllNotes -> getNotesForTag(tag = Tag("All Notes"))
-            is HomeEvents.GetAllTags -> getTags()
-            is HomeEvents.GetNotesForTag -> getNotesForTag(tag = event.tag)
-            is HomeEvents.OnSearchQueryChange -> onSearchQueryChange(query = event.query)
-            is HomeEvents.OnSearchQueryClear -> onSearchQueryClear()
-            is HomeEvents.OnDarkModeToggle -> onDarkModeToggle()
+            is NoteEvents.OnCreateNewTag -> onCreateNewTag()
+            is NoteEvents.OnConfirmDeleteNote -> deleteNote(event.note)
+            is NoteEvents.OnGetNote -> getNote(noteId = event.noteId)
+            is NoteEvents.OnSelectTag -> onSelectTag(tag = event.tag)
+            is NoteEvents.OnUnselectTag -> onUnselectTag(tag = event.tag)
+            is NoteEvents.OnContentTextChange -> onContentTextChange(contentText = event.contentText)
+            is NoteEvents.OnSaveChanges -> onSaveChanges(note = event.note, tags = event.tags)
+            is NoteEvents.OnTitleChange -> onTitleChange(title = event.title)
+            is NoteEvents.OnEditNote -> onEditNote(isEditing = event.isEditing)
+            is NoteEvents.OnCancelCreatingNewTag -> onCancelCreatingNewTag()
+            is NoteEvents.OnSaveNewTag -> onSaveNewTag(tagName = event.tagName)
+            is NoteEvents.OnNewTagNameChange -> onNewTagNameChange(event.tagName)
+            is NoteEvents.OnDeleteClick -> onDeleteClick()
+            is NoteEvents.OnCancelDelete -> onCancelDelete()
+            is NoteEvents.OnNewNote -> onNewNote()
         }
     }
 
-    private fun onSearchQueryChange(query: String) {
-        _searchBarState.value = searchBarState.value.copy(searchQuery = query)
-    }
-    private fun onSearchQueryClear() {
-        _searchBarState.value = searchBarState.value.copy(searchQuery = "")
-    }
-    private fun onDarkModeToggle() {
-        _darkModeState.value = darkModeState.value.copy(isInDarkMode = !darkModeState.value.isInDarkMode)
+    private fun onUnselectTag(tag: Tag) {
+        _selectedTagsState.value = selectedTagsState.value.copy(tags = selectedTagsState.value.tags.minus(tag))
+        Log.d(NOTE_VIEWMODEL, "onUnselectTag: ${selectedTagsState.value.tags}")
     }
 
-    private fun getTags(){
+    private fun onSelectTag(tag: Tag) {
+        _selectedTagsState.value = selectedTagsState.value.copy(tags = selectedTagsState.value.tags.plus(tag))
+        Log.d(NOTE_VIEWMODEL, "onSelectTag: ${selectedTagsState.value.tags}")
+    }
+
+    private fun onCancelDelete() {
+        _deleteDialogState.value = deleteDialogState.value.copy(isDeleteDialogShown = false)
+    }
+
+    private fun onDeleteClick() {
+        _deleteDialogState.value = deleteDialogState.value.copy(isDeleteDialogShown = true)
+    }
+
+    private fun onNewTagNameChange(tagName: String) {
+        _newTagState.value = newTagState.value.copy(tagName = tagName)
+    }
+
+    private fun onCancelCreatingNewTag() {
+        _newTagState.value = newTagState.value.copy(tagName = "", isNewTagDialogShown = false)
+    }
+
+    private fun onCreateNewTag() {
+        _newTagState.value = newTagState.value.copy(isNewTagDialogShown = true)
+    }
+
+    private fun onEditNote(isEditing:Boolean) {
+        _noteEditingState.value = noteEditingState.value.copy(isEditingNote = isEditing)
+    }
+
+    private fun onTitleChange(title: String) {
+        _titleState.value = titleState.value.copy(title = title)
+    }
+
+    private fun onContentTextChange(contentText: String) {
+        _contentTextState.value = contentTextState.value.copy(noteContentText = contentText)
+    }
+
+    private fun onSaveChanges(note: Note, tags: List<Tag>) {
         viewModelScope.launch {
-            noteRepository.getTagsWithNotes()
-                .flowOn(Dispatchers.IO)
-                .catch { e ->
-                    Log.d(NOTE_VIEWMODEL, "Error fetching tags", e)
-                }.collect{
-                    _tagsState.value = tagsState.value.copy(tags = it)
-                }
+            //we must delete the old tags associated with this note and replace them with new list of tags
+            noteRepository.deleteNoteWithTags(note.noteId)
+            noteRepository.insertNoteWithTags(note, tags.plus(Tag("All Notes")))
+            _tagsState.value = tagsState.value.copy(tags = tags)
+            Log.d(NOTE_VIEWMODEL, "onSaveChanges: $tags")
         }
     }
 
-    private fun getNotesForTag(tag: Tag) {
-        _tagsState.value = tagsState.value.copy(selectedTag = tag)
+    private fun deleteNote(note: Note) {
         viewModelScope.launch {
-            val notes = noteRepository.getTagWithNotes(tag.tagName)
-            if (notes != null){
-                _notesListState.value = notesListState.value.copy(notes = notes)
-            }
-
+            noteRepository.deleteNote(note)
+            _deleteDialogState.value = deleteDialogState.value.copy(isDeleteDialogShown = false)
         }
     }
 
+    private fun onSaveNewTag(tagName: String) {
+        _noteEditingState.value = noteEditingState.value.copy(isEditingNote = true)
+        _tagsState.value = tagsState.value.copy(tags = tagsState.value.tags.plus(Tag(capitalizeFirstLetter(tagName))))
+        _newTagState.value = newTagState.value.copy(tagName = "", isNewTagDialogShown = false)
+        _selectedTagsState.value = _selectedTagsState.value.copy(tags = _selectedTagsState.value.tags.plus(Tag(capitalizeFirstLetter(tagName))))
+    }
 
-    private fun insertBulkNotes(){
-        val randomNotes = listOf(
-            Pair(
-                Note(0, "Work Note", "Complete the project tasks assigned for this week",
-                    listOf("work_image1.jpg", "work_image2.jpg"),
-                    listOf("work_audio1.mp3", "work_audio2.mp3"), 1625140800000),
-                listOf(Tag("Work"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Shopping List", "Buy milk, bread, eggs, and vegetables from the market",
-                    listOf("shopping_image1.jpg", "shopping_image2.jpg"),
-                    listOf("shopping_audio1.mp3", "shopping_audio2.mp3"), 1625227200000),
-                listOf(Tag("Personal"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Travel Plans", "Book flights and hotels for the vacation trip next month",
-                    listOf("travel_image1.jpg", "travel_image2.jpg"),
-                    listOf("travel_audio1.mp3", "travel_audio2.mp3"), 1625313600000),
-                listOf(Tag("Travel"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Meeting Notes", "Key points discussed during the weekly team meeting",
-                    listOf("meeting_image1.jpg", "meeting_image2.jpg"),
-                    listOf("meeting_audio1.mp3", "meeting_audio2.mp3"), 1625400000000),
-                listOf(Tag("Work"), Tag("Meetings"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Recipe", "Chocolate cake recipe with detailed steps and ingredients",
-                    listOf("recipe_image1.jpg", "recipe_image2.jpg"),
-                    listOf("recipe_audio1.mp3", "recipe_audio2.mp3"), 1625486400000),
-                listOf(Tag("Personal"), Tag("Cooking"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Fitness Routine", "Daily exercise plan including warm-ups and strength training",
-                    listOf("fitness_image1.jpg", "fitness_image2.jpg"),
-                    listOf("fitness_audio1.mp3", "fitness_audio2.mp3"), 1625572800000),
-                listOf(Tag("Health"), Tag("Fitness"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Book Summary", "Summary of the current book I am reading",
-                    listOf("book_image1.jpg", "book_image2.jpg"),
-                    listOf("book_audio1.mp3", "book_audio2.mp3"), 1625659200000),
-                listOf(Tag("Personal"), Tag("Reading"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Project Ideas", "Ideas for the new project proposal to be discussed",
-                    listOf("project_image1.jpg", "project_image2.jpg"),
-                    listOf("project_audio1.mp3", "project_audio2.mp3"), 1625745600000),
-                listOf(Tag("Work"), Tag("Ideas"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Birthday Plans", "Plan for the birthday party including guests and decorations",
-                    listOf("birthday_image1.jpg", "birthday_image2.jpg"),
-                    listOf("birthday_audio1.mp3", "birthday_audio2.mp3"), 1625832000000),
-                listOf(Tag("Personal"), Tag("Events"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Meditation Guide", "Steps for daily meditation practice to improve focus",
-                    listOf("meditation_image1.jpg", "meditation_image2.jpg"),
-                    listOf("meditation_audio1.mp3", "meditation_audio2.mp3"), 1625918400000),
-                listOf(Tag("Health"), Tag("Meditation"), Tag("All Notes"))
-            )
-        )
-
-        randomNotes.forEach { (note, tags) ->
-            viewModelScope.launch {
-                noteRepository.insertNoteWithTags(note, tags)
+    private fun getNote(noteId: Int) {
+        viewModelScope.launch {
+            val noteWithTags = noteRepository.getNoteWithTags(noteId)
+            if (noteWithTags != null){
+                _noteState.value = noteState.value.copy(note = noteWithTags.note)
+                _tagsState.value = tagsState.value.copy(tags = noteWithTags.tags)
+                _selectedTagsState.value = selectedTagsState.value.copy(tags = tagsState.value.tags)
+                _titleState.value = titleState.value.copy(title = noteWithTags.note.title)
+                _contentTextState.value = contentTextState.value.copy(noteContentText = noteWithTags.note.contentText)
             }
         }
     }
-
-
-
-
+    private fun onNewNote(){
+        _noteEditingState.value = noteEditingState.value.copy(isEditingNote = true)
+    }
 }

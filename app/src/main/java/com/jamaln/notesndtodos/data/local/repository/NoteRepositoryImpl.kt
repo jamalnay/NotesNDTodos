@@ -1,17 +1,12 @@
 package com.jamaln.notesndtodos.data.local.repository
 
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
-import androidx.paging.PagingData
 import com.jamaln.notesndtodos.data.local.dao.NoteDao
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.NoteWithTags
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.data.model.TagWithNotes
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOn
 import javax.inject.Inject
 
 class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteRepository {
@@ -20,7 +15,7 @@ class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteR
         noteDao.insertNoteWithTags(note, tags)
     }
 
-    override fun getNoteWithTags(noteId: Int): Flow<List<NoteWithTags>>{
+    override suspend fun getNoteWithTags(noteId: Int): NoteWithTags?{
         return noteDao.getNoteWithTags(noteId)
     }
 
@@ -36,8 +31,24 @@ class NoteRepositoryImpl @Inject constructor(private val noteDao: NoteDao):NoteR
         return noteDao.getAllTags()
     }
 
-    // Retrieve only tags that have notes associated with them
+    // Retrieve ONLY the tags that have notes associated with them
     override fun getTagsWithNotes(): Flow<List<Tag>> {
         return noteDao.getTagsWithNotes()
+    }
+
+    override fun searchNotes(query: String): Flow<List<Note>?> {
+        return noteDao.searchNotes(query)
+    }
+
+    override suspend fun insertTag(tag: Tag) {
+        noteDao.insertTag(tag)
+    }
+
+    override suspend fun deleteNote(note: Note) {
+        noteDao.deleteNote(note)
+    }
+
+    override suspend fun deleteNoteWithTags(noteId: Int) {
+        return noteDao.deleteNoteWithTags(noteId)
     }
 }
