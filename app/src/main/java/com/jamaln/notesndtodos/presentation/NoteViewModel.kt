@@ -8,6 +8,7 @@ import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
 import com.jamaln.notesndtodos.presentation.events.NoteEvents
 import com.jamaln.notesndtodos.presentation.state.NoteUiState
+import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import com.jamaln.notesndtodos.utils.NoteUtils.Companion.capitalizeFirstLetter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -113,7 +114,7 @@ class NoteViewModel @Inject constructor(
         viewModelScope.launch {
             //we must delete the old tags associated with this note and replace them with new list of tags
             noteRepository.deleteNoteWithTags(note.noteId)
-            noteRepository.insertNoteWithTags(note, tags.plus(Tag("All Notes")))
+            noteRepository.insertNoteWithTags(note, tags.plus(ALL_NOTES_TAG))
             _tagsState.value = tagsState.value.copy(tags = tags)
             Log.d(NOTE_VIEWMODEL, "onSaveChanges: $tags")
         }

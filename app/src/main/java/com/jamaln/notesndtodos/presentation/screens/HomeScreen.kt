@@ -1,5 +1,6 @@
 package com.jamaln.notesndtodos.presentation.screens
 
+
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -42,27 +43,59 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.jamaln.notesndtodos.R
+import com.jamaln.notesndtodos.data.model.Note
+import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.presentation.HomeViewModel
 import com.jamaln.notesndtodos.presentation.components.LargeNoteCard
 import com.jamaln.notesndtodos.presentation.components.SearchBar
 import com.jamaln.notesndtodos.presentation.components.TagFilterChip
 import com.jamaln.notesndtodos.presentation.events.HomeEvents
+import com.jamaln.notesndtodos.presentation.state.HomeUiState
+import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import kotlinx.coroutines.launch
 
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     homeViewModel: HomeViewModel = hiltViewModel(),
     onNoteClick: (Int) -> Unit,
+    onDarkModeToggle: () -> Unit,
+    isDarTheme: Boolean
 ) {
+
+
     val notesState by homeViewModel.notesState.collectAsStateWithLifecycle()
     val tagsState by homeViewModel.tagsState.collectAsStateWithLifecycle()
-    val darkModeState by homeViewModel.darkModeState.collectAsStateWithLifecycle()
     val searchBarState by homeViewModel.searchBarState.collectAsStateWithLifecycle()
+
+    HomeContent(
+        onNoteClick = onNoteClick,
+        notes = notesState.notes,
+        tagsState = tagsState,
+        searchQuery = searchBarState.searchQuery,
+        isDarTheme = isDarTheme,
+        onSearchBarQueryChange = { homeViewModel.onEvent(HomeEvents.OnSearchQueryChange(it)) },
+        onSearchQueryClear = { homeViewModel.onEvent(HomeEvents.OnSearchQueryClear) },
+        onDarkModeToggle = onDarkModeToggle,
+        onGetNotesForTag = { homeViewModel.onEvent(HomeEvents.GetNotesForTag(it)) }
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun HomeContent(
+    onNoteClick: (Int) -> Unit,
+    notes: List<Note>,
+    tagsState: HomeUiState.TagsState,
+    searchQuery: String,
+    isDarTheme: Boolean,
+    onSearchBarQueryChange: (String) -> Unit,
+    onSearchQueryClear: () -> Unit,
+    onDarkModeToggle: () -> Unit,
+    onGetNotesForTag: (Tag) -> Unit
+) {
     val pagerState = rememberPagerState(pageCount = { 2 })
     val coroutineScope = rememberCoroutineScope()
-
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -87,9 +120,9 @@ fun HomeScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SearchBar(
-                    value = searchBarState.searchQuery,
-                    onValueChange = { homeViewModel.onEvent(HomeEvents.OnSearchQueryChange(it)) },
-                    onQueryClear = { homeViewModel.onEvent(HomeEvents.OnSearchQueryClear) },
+                    value = searchQuery,
+                    onValueChange = { onSearchBarQueryChange(it) },
+                    onQueryClear = { onSearchQueryClear() },
                     label = "Search...",
                     modifier = Modifier.weight(1f)
                 )
@@ -99,12 +132,12 @@ fun HomeScreen(
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.tertiaryContainer),
                     onClick = {
-                        homeViewModel.onEvent(HomeEvents.OnDarkModeToggle)
+                        onDarkModeToggle()
                     }
                 ) {
                     Icon(
                         painter = painterResource(
-                            id = if (darkModeState.isInDarkMode) R.drawable.dark_mode
+                            id = if (isDarTheme) R.drawable.dark_mode
                             else R.drawable.light_mode
                         ),
                         contentDescription = "Dark/Light mode toggle"
@@ -172,11 +205,11 @@ fun HomeScreen(
                                 .padding(start = 20.dp, top = 16.dp, end = 20.dp),
                         ) {
                             //We want "All Notes" to be the first tag to in the tags list
-                            tagsState.tags.sortedWith(compareBy { it.tagName != "All Notes" }).forEach { tag ->
+                            tagsState.tags.sortedWith(compareBy { it.tagName != ALL_NOTES_TAG.tagName }).forEach { tag ->
                                 TagFilterChip(
                                     tagName = ("#").plus(tag.tagName),
                                     selected = tag == tagsState.selectedTag,
-                                    onClick = { homeViewModel.onEvent(HomeEvents.GetNotesForTag(tag)) }
+                                    onClick = { onGetNotesForTag(tag) }
                                 )
                             }
                         }
@@ -190,15 +223,13 @@ fun HomeScreen(
                             verticalItemSpacing = 24.dp,
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            if (notesState.notes.isNotEmpty()){
-                                notesState.notes.size.let { it ->
-                                    items(count = it, key = { notesState.notes[it].noteId } ) { index ->
-                                        LargeNoteCard(
-                                            modifier = Modifier.animateItemPlacement(),
-                                            note = notesState.notes[index],
-                                            onClick = {onNoteClick(notesState.notes[index].noteId)}
-                                        )
-                                    }
+                            if (notes.isNotEmpty()){
+                                items(count = notes.size, key = { notes[it].noteId } ) { index ->
+                                    LargeNoteCard(
+                                        modifier = Modifier.animateItemPlacement(),
+                                        note = notes[index],
+                                        onClick = {onNoteClick(notes[index].noteId)}
+                                    )
                                 }
                             }
                         }

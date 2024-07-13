@@ -4,9 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.rememberNavController
 import com.jamaln.notesndtodos.presentation.theme.NotesNDTodosTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -20,14 +19,18 @@ class MainActivity : ComponentActivity() {
 //        enableEdgeToEdge()
 
         setContent {
+            val mainViewModel: MainViewModel = hiltViewModel()
             val navController = rememberNavController()
-            var darkTheme by remember { mutableStateOf(false) }
+            val darkModeState by mainViewModel.darkModeState.collectAsStateWithLifecycle()
             NotesNDTodosTheme(
-                darkTheme = darkTheme
+                darkTheme = darkModeState.isInDarkMode
             ) {
-                NavGraph(navController = navController,)
+                NavGraph(
+                    navController = navController,
+                    darkModeState.isInDarkMode,
+                    mainViewModel::onDarkModeToggle
+                )
             }
-
         }
     }
 }

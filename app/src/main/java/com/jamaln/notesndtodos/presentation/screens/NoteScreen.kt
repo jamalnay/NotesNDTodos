@@ -50,6 +50,7 @@ import com.jamaln.notesndtodos.presentation.components.TagInputChip
 import com.jamaln.notesndtodos.presentation.events.NoteEvents
 import com.jamaln.notesndtodos.presentation.preview.PreviewDarkLight
 import com.jamaln.notesndtodos.presentation.theme.NotesNDTodosTheme
+import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import com.jamaln.notesndtodos.utils.NoteUtils.Companion.timeStampToDate
 
 
@@ -263,7 +264,7 @@ fun ViewUpdateNoteContent(
                 NewTagChip(onClick = { onCreateNewTag() })
 
                 tags.forEach { tag ->
-                    if (tag.tagName != "All Notes")
+                    if (tag.tagName != ALL_NOTES_TAG.tagName)
                         TagInputChip(
                             tagName = ("#").plus(tag.tagName),
                             selected = tag in selectedTags,

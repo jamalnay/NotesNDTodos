@@ -11,14 +11,18 @@ import com.jamaln.notesndtodos.presentation.navigation.note
 import com.jamaln.notesndtodos.utils.AppRoutes
 
 @Composable
-fun NavGraph(navController: NavHostController) {
+fun NavGraph(
+    navController: NavHostController,
+    isDarTheme: Boolean,
+    onDarkModeToggle: ()->Unit
+) {
     NavHost(
         navController = navController,
         startDestination = AppRoutes.HomeScreen.route,
         enterTransition = { fadeIn(animationSpec = tween(400)) },
         exitTransition = { fadeOut(animationSpec = tween(400)) }
     ) {
-        home(navController)
+        home(navController, isDarTheme, onDarkModeToggle)
         note(navController)
     }
 }

@@ -2,6 +2,7 @@ package com.jamaln.notesndtodos.presentation.state
 
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
+import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 
 
 class HomeUiState {
@@ -9,10 +10,8 @@ class HomeUiState {
 
     data class TagsState(
         val tags: List<Tag> = emptyList(),
-        val selectedTag: Tag = Tag("All Notes"),
+        val selectedTag: Tag = ALL_NOTES_TAG,
     )
-
-    data class DarkModeState(val isInDarkMode: Boolean = false)
 
     data class SearchBarState(val searchQuery: String = "" )
 

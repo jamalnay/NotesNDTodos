@@ -8,5 +8,4 @@ sealed class HomeEvents {
     data class GetNotesForTag(val tag:Tag) : HomeEvents()
     data class OnSearchQueryChange(val query: String) : HomeEvents()
     data object OnSearchQueryClear : HomeEvents()
-    data object OnDarkModeToggle : HomeEvents()
 }

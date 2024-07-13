@@ -11,7 +11,6 @@ composeBom = "2024.04.01"
 
 kotlinCompilerExtensionVersion = "1.5.10"
 kotlinxSerializationJson = "1.6.3"
-material = "1.12.0"
 accompanistPermissions = "0.35.1-alpha"
 hilt = "2.51"
 hilt-navigation = "1.2.0"
@@ -19,9 +18,9 @@ ksp = "1.9.22-1.0.18"
 kotlinSerialzation = "1.9.22"
 compose-navigation = "2.7.7"
 room = "2.6.1"
-uiTextGoogleFonts = "1.6.8"
 composeLifeCycleRuntime = "2.8.3"
 paging3 = "3.3.0"
+prefsDatastore = "1.1.1"
 
 
 [libraries]
@@ -39,10 +38,10 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-material = { group = "com.google.android.material", name = "material", version.ref = "material" }
-androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core" }
 compose-navigation = { module = "androidx.navigation:navigation-compose", version.ref = "compose-navigation" }
 compose-lifeCycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "composeLifeCycleRuntime" }
+prefs-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "prefsDatastore" }
+
 
 #Room
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
@@ -59,7 +58,6 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 
 #Permissions
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
 #Paging
 compose-paging = { module = "androidx.paging:paging-compose",version.ref = "paging3"}

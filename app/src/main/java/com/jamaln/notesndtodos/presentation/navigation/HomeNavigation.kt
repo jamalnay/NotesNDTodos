@@ -6,10 +6,16 @@ import androidx.navigation.compose.composable
 import com.jamaln.notesndtodos.presentation.screens.HomeScreen
 import com.jamaln.notesndtodos.utils.AppRoutes
 
-fun NavGraphBuilder.home(navController: NavController) {
+fun NavGraphBuilder.home(
+    navController: NavController,
+    isDarTheme: Boolean,
+    onDarkModeToggle: ()->Unit
+) {
     composable(AppRoutes.HomeScreen.route) {
-        HomeScreen{noteId ->
-            navController.navigate(AppRoutes.NoteScreen.route + "/$noteId")
-        }
+        HomeScreen(
+            isDarTheme = isDarTheme,
+            onDarkModeToggle = onDarkModeToggle,
+            onNoteClick = {noteId -> navController.navigate(AppRoutes.NoteScreen.route + "/$noteId")}
+        )
     }
 }

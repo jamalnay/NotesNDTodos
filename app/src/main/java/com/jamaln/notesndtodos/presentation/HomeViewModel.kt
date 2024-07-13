@@ -5,11 +5,13 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
+import com.jamaln.notesndtodos.di.DispatchersModule
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
 import com.jamaln.notesndtodos.presentation.events.HomeEvents
 import com.jamaln.notesndtodos.presentation.state.HomeUiState
+import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,7 +28,8 @@ import javax.inject.Inject
 const val HOME_VIEWMODEL = "NoteViewModel"
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
+    @DispatchersModule.IoDispatcher private val iODispatcher: CoroutineDispatcher
 ) : ViewModel(){
 
     private val _notesState = MutableStateFlow(HomeUiState.NotesListState())
@@ -34,9 +37,6 @@ class HomeViewModel @Inject constructor(
 
     private val _tagsState = MutableStateFlow(HomeUiState.TagsState())
     val tagsState = _tagsState.asStateFlow()
-
-    private val _darkModeState = MutableStateFlow(HomeUiState.DarkModeState())
-    val darkModeState = _darkModeState.asStateFlow()
 
     private val _searchBarState = MutableStateFlow(HomeUiState.SearchBarState())
     val searchBarState = _searchBarState.asStateFlow()
@@ -46,9 +46,10 @@ class HomeViewModel @Inject constructor(
 
 
     init {
-//        insertBulkNotes()
+        insertBulkNotes()
         onEvent(HomeEvents.GetAllNotes)
         onEvent(HomeEvents.GetAllTags)
+
     }
 
     fun onEvent(event: HomeEvents){
@@ -58,13 +59,14 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.GetNotesForTag -> getNotesForTag(tag = event.tag)
             is HomeEvents.OnSearchQueryChange -> onSearchQueryChange(query = event.query)
             is HomeEvents.OnSearchQueryClear -> onSearchQueryClear()
-            is HomeEvents.OnDarkModeToggle -> onDarkModeToggle()
         }
     }
 
+
+
     private fun getAllNotes() {
         viewModelScope.launch {
-            noteRepository.getAllNotes().flowOn(Dispatchers.IO).catch { e ->
+            noteRepository.getAllNotes().flowOn(iODispatcher).catch { e ->
                 Log.d(HOME_VIEWMODEL, "Error fetching notes", e)
             }.collect { notes ->
                 _notesState.value = notesState.value.copy(notes = notes)
@@ -81,7 +83,7 @@ class HomeViewModel @Inject constructor(
                 .distinctUntilChanged()
                 .flatMapLatest { query ->
                     noteRepository.searchNotes(query)
-                }
+                }.flowOn(iODispatcher)
                 .collect { notes ->
                     if(notes != null){
                         _notesState.value = notesState.value.copy(notes = notes)
@@ -91,15 +93,14 @@ class HomeViewModel @Inject constructor(
     }
     private fun onSearchQueryClear() {
         _searchBarState.value = searchBarState.value.copy(searchQuery = "")
+        _tagsState.value = tagsState.value.copy(selectedTag = ALL_NOTES_TAG)
     }
-    private fun onDarkModeToggle() {
-        _darkModeState.value = darkModeState.value.copy(isInDarkMode = !darkModeState.value.isInDarkMode)
-    }
+
 
     private fun getTags(){
         viewModelScope.launch {
             noteRepository.getTagsWithNotes()
-                .flowOn(Dispatchers.IO)
+                .flowOn(iODispatcher)
                 .catch { e ->
                     Log.d(HOME_VIEWMODEL, "Error fetching tags", e)
                 }.collect{
