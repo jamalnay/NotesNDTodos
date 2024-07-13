@@ -12,7 +12,7 @@ class HomeUiState {
         val tags: List<Tag> = emptyList(),
         val selectedTag: Tag = ALL_NOTES_TAG,
     )
-
+    data class DarkModeState(val isInDarkMode: Boolean = false)
     data class SearchBarState(val searchQuery: String = "" )
 
     data class TabState(val selectedTab: Tabs = Tabs.Notes)

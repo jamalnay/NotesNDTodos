@@ -7,6 +7,7 @@ import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.di.DispatchersModule
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
+import com.jamaln.notesndtodos.domain.repository.PreferencesRepository
 import com.jamaln.notesndtodos.presentation.events.HomeEvents
 import com.jamaln.notesndtodos.presentation.state.HomeUiState
 import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
@@ -29,7 +30,8 @@ const val HOME_VIEWMODEL = "NoteViewModel"
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
-    @DispatchersModule.IoDispatcher private val iODispatcher: CoroutineDispatcher
+    @DispatchersModule.IoDispatcher private val iODispatcher: CoroutineDispatcher,
+    private val preferencesRepository: PreferencesRepository
 ) : ViewModel(){
 
     private val _notesState = MutableStateFlow(HomeUiState.NotesListState())
@@ -44,9 +46,13 @@ class HomeViewModel @Inject constructor(
     private val _tabState = MutableStateFlow(HomeUiState.TabState())
     val tabState = _tabState.asStateFlow()
 
+    private val _darkModeState = MutableStateFlow(HomeUiState.DarkModeState())
+    val darkModeState = _darkModeState.asStateFlow()
+
 
     init {
-        insertBulkNotes()
+//        insertBulkNotes()
+        getDarkModeState()
         onEvent(HomeEvents.GetAllNotes)
         onEvent(HomeEvents.GetAllTags)
 
@@ -59,6 +65,22 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.GetNotesForTag -> getNotesForTag(tag = event.tag)
             is HomeEvents.OnSearchQueryChange -> onSearchQueryChange(query = event.query)
             is HomeEvents.OnSearchQueryClear -> onSearchQueryClear()
+            is HomeEvents.OnGetDarkModeState -> getDarkModeState()
+            is HomeEvents.OnToggleDarkMode -> onDarkModeToggle()
+        }
+    }
+
+    private fun getDarkModeState() {
+        viewModelScope.launch {
+            preferencesRepository.isDarkTheme().collect{ isDarkTheme ->
+                _darkModeState.value = darkModeState.value.copy(isInDarkMode = isDarkTheme)
+            }
+        }
+    }
+
+    private fun onDarkModeToggle() {
+        viewModelScope.launch {
+            preferencesRepository.toggleDarkLight()
         }
     }
 
