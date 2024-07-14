@@ -20,9 +20,16 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.List
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -70,6 +77,8 @@ fun HomeScreen(
     val selectedTabState by homeViewModel.tabState.collectAsStateWithLifecycle()
     val currentTodoState by homeViewModel.currentTodo.collectAsStateWithLifecycle()
     val uncheckedTodosState by homeViewModel.uncheckedTodosCount.collectAsStateWithLifecycle()
+    val isInDeleteMode by homeViewModel.isInDeleteMode.collectAsStateWithLifecycle()
+    val todosDeleteListState by homeViewModel.todosDeleteListState.collectAsStateWithLifecycle()
 
     HomeContent(
         selectedTab = selectedTabState.selectedTab,
@@ -90,7 +99,12 @@ fun HomeScreen(
         onTodoTitleChange = { homeViewModel.onEvent(HomeEvents.OnTodoTitleChange(it)) },
         onTodoDescriptionChange = { homeViewModel.onEvent(HomeEvents.OnTodoDescriptionChange(it)) },
         onEditTodo = { homeViewModel.onEvent(HomeEvents.OnEditTodo(it)) },
-        onSaveTodo = { homeViewModel.onEvent(HomeEvents.OnSaveTodo(it)) }
+        onSaveTodo = { homeViewModel.onEvent(HomeEvents.OnSaveTodo(it)) },
+        setInDeleteMode = { homeViewModel.onEvent(HomeEvents.SetIsInDeleteMode(it)) },
+        isInDeleteMode = isInDeleteMode.isInDeleteMode,
+        setSelectedForDelete = {homeViewModel.onEvent(HomeEvents.SetSelectedForDelete(it))},
+        onDeleteSelectedTodos = { homeViewModel.onEvent(HomeEvents.OnDeleteTodos(it))},
+        todosDeleteList = todosDeleteListState.todos
     )
 }
 
@@ -116,6 +130,11 @@ fun HomeContent(
     onTodoDescriptionChange: (String) -> Unit,
     onEditTodo: (Todo) -> Unit,
     onSaveTodo: (Todo) -> Unit,
+    todosDeleteList: List<Todo>,
+    setInDeleteMode: (Boolean) -> Unit,
+    isInDeleteMode: Boolean = false,
+    setSelectedForDelete: (Todo) -> Unit,
+    onDeleteSelectedTodos: (List<Todo>) -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
     var showNewTodoSheet by remember { mutableStateOf(false) }
@@ -150,6 +169,37 @@ fun HomeContent(
                     imageVector = Icons.Default.Add,
                     contentDescription = "New note/todo"
                 )
+            }
+        },
+        bottomBar = {
+            if (isInDeleteMode){
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ){
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                        ){
+                        IconButton(
+                            colors = IconButtonDefaults.iconButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary,
+                                disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
+                            ),
+                            onClick = {
+                                onDeleteSelectedTodos(todosDeleteList)
+                                setInDeleteMode(false)
+                                Toast.makeText(context,"Todos deleted successfully",Toast.LENGTH_SHORT).show()
+                            },
+                            enabled = todosDeleteList.isNotEmpty()
+                        ){
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = "delete all selected",
+                            )
+                        }
+                    }
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -187,25 +237,64 @@ fun HomeContent(
                 .padding(paddingValues)
                 .fillMaxSize(),
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceContainer),
-                horizontalArrangement = Arrangement.spacedBy(0.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                SearchBar(
-                    value = searchQuery,
-                    onValueChange = { onSearchBarQueryChange(it) },
-                    onQueryClear = { onSearchQueryClear() },
-                    label = "Search...",
-                    modifier = Modifier.weight(1f)
-                )
-                DarkModeToggle(
-                    isDarkTheme = isDarkTheme,
-                    onDarkModeToggle = onDarkModeToggle
-                )
-            }
+            if(isInDeleteMode){
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 20.dp, top = 16.dp, end = 20.dp, bottom = 20.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    IconButton(
+                        onClick = {
+                            setInDeleteMode(false)
+                        }){
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "close delete mode",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                    Text(
+                        text = "Select Items",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+
+                    IconButton(
+                        onClick = {
+                            // TODO() selectAll
+                        }){
+                        Icon(
+                            Icons.AutoMirrored.Filled.List,
+                            contentDescription = "select all for deletion",
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+
+                }
+            }else Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
+                    horizontalArrangement = Arrangement.spacedBy(0.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    SearchBar(
+                        value = searchQuery,
+                        onValueChange = { onSearchBarQueryChange(it) },
+                        onQueryClear = { onSearchQueryClear() },
+                        label = "Search...",
+                        modifier = Modifier.weight(1f)
+                    )
+                    DarkModeToggle(
+                        isDarkTheme = isDarkTheme,
+                        onDarkModeToggle = onDarkModeToggle
+                    )
+                }
+
+
             TabRow(
                 selectedTabIndex = pagerState.currentPage,
                 containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -318,7 +407,11 @@ fun HomeContent(
                                         onClick = {
                                             onEditTodo(sortedTodos[index])
                                             showNewTodoSheet = true
-                                        }
+                                        },
+                                        activateDeleteMode = { setInDeleteMode(true) },
+                                        isInDeleteMode = isInDeleteMode,
+                                        isSelectedForDelete = todosDeleteList.any { it.todoId == sortedTodos[index].todoId },
+                                        setSelectedForDelete = {setSelectedForDelete(sortedTodos[index])}
                                     )
                                 }
                             }

@@ -62,6 +62,12 @@ class HomeViewModel @Inject constructor(
     private val _currentTodo = MutableStateFlow(Todo(todoId = 0, todoTitle = "", todoDescription = "", isChecked = false))
     val currentTodo = _currentTodo.asStateFlow()
 
+    private val _isInDeleteMode = MutableStateFlow(HomeUiState.DeleteModeState())
+    val isInDeleteMode = _isInDeleteMode.asStateFlow()
+
+    private val _todosDeleteListState = MutableStateFlow(HomeUiState.TodosListState())
+    val todosDeleteListState = _todosDeleteListState.asStateFlow()
+
 
 
 
@@ -93,6 +99,39 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.OnTodoTitleChange -> onTodoTitleChange(event.title)
             is HomeEvents.CountUncheckedTodos -> getUncheckedTodosCount()
             is HomeEvents.OnEditTodo -> onEditTodo(event.todo)
+            is HomeEvents.SetIsInDeleteMode -> setIsInDeleteMode(event.isInDeleteMode)
+            is HomeEvents.OnDeleteTodos -> onDeleteTodos(event.todosList)
+            is HomeEvents.SetSelectedForDelete -> setSelectedForDelte(event.todo)
+        }
+    }
+
+    private fun setSelectedForDelte(todo: Todo) {
+        if (todosDeleteListState.value.todos.contains(todo)){
+            _todosDeleteListState.value = todosDeleteListState.value.copy(
+                todos = todosDeleteListState.value.todos - todo
+            )
+            return
+        }
+
+        _todosDeleteListState.value = todosDeleteListState.value.copy(
+            todos = todosDeleteListState.value.todos + todo
+        )
+    }
+
+    private fun onDeleteTodos(todosList:List<Todo>) {
+        viewModelScope.launch {
+            todosList.forEach {
+                todoRepository.deleteTodo(it)
+            }
+            _todosDeleteListState.value = todosDeleteListState.value.copy(todos = emptyList())
+        }
+
+    }
+
+    private fun setIsInDeleteMode(inDeleteMode: Boolean) {
+        _isInDeleteMode.value = isInDeleteMode.value.copy(isInDeleteMode = inDeleteMode)
+        if (!inDeleteMode){
+            _todosDeleteListState.value = todosDeleteListState.value.copy(todos = emptyList())
         }
     }
 

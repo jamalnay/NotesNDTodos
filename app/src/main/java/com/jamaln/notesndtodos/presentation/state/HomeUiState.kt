@@ -16,4 +16,5 @@ class HomeUiState {
     data class DarkModeState(val isInDarkMode: Boolean = false)
     data class SearchBarState(val searchQuery: String = "" )
     data class TabState(val selectedTab: Tabs = Tabs.Notes)
+    data class DeleteModeState(val isInDeleteMode: Boolean = false)
 }
