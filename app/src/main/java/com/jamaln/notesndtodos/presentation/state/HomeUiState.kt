@@ -2,11 +2,13 @@ package com.jamaln.notesndtodos.presentation.state
 
 import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
+import com.jamaln.notesndtodos.data.model.Todo
 import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 
 
 class HomeUiState {
     data class NotesListState(val notes : List<Note> = emptyList())
+    data class TodosListState(val todos : List<Todo> = emptyList())
 
     data class TagsState(
         val tags: List<Tag> = emptyList(),
@@ -17,5 +19,6 @@ class HomeUiState {
 
     data class TabState(val selectedTab: Tabs = Tabs.Notes)
 
-    enum class Tabs { Notes, Todos }
+    data class TodoTitleState(val title: String = "")
+    data class TodoDescriptionState(val description: String = "")
 }

@@ -1,4 +1,4 @@
-package com.jamaln.notesndtodos.presentation.components
+package com.jamaln.notesndtodos.presentation.components.note
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape

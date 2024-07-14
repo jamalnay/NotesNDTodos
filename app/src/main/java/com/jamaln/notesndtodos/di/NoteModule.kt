@@ -13,11 +13,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object DatabaseModule {
+object NoteModule {
 
     @Singleton
     @Provides
-    fun provideLocalDatabase(@ApplicationContext context: Context): NoteDatabase {
+    fun provideNoteDatabase(@ApplicationContext context: Context): NoteDatabase {
         return NoteDatabase.getInstance(context)
     }
 

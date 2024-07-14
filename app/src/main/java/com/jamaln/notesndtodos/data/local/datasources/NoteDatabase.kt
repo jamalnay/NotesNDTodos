@@ -12,7 +12,7 @@ import com.jamaln.notesndtodos.data.model.NoteTagCrossRef
 import com.jamaln.notesndtodos.data.model.Tag
 
 
-const val DATABASE_NAME = "notes_database"
+const val NOTE_DATABASE_NAME = "notes_database"
 
 @Database(
     entities = [Note::class, Tag::class, NoteTagCrossRef::class],
@@ -32,7 +32,7 @@ abstract class NoteDatabase : RoomDatabase() {
         }
 
         private fun buildDatabase(context: Context): NoteDatabase {
-            return Room.databaseBuilder(context, NoteDatabase::class.java, DATABASE_NAME)
+            return Room.databaseBuilder(context, NoteDatabase::class.java, NOTE_DATABASE_NAME)
                 .build()
         }
     }

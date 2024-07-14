@@ -1,4 +1,4 @@
-package com.jamaln.notesndtodos.presentation.components
+package com.jamaln.notesndtodos.presentation.components.note
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

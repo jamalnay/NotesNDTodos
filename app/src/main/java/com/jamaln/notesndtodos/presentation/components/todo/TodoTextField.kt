@@ -1,6 +1,7 @@
-package com.jamaln.notesndtodos.presentation.components
+package com.jamaln.notesndtodos.presentation.components.todo
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -14,36 +15,48 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TextFieldDefaults.ContainerBox
 import androidx.compose.material3.TextFieldDefaults.colors
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-
+import com.jamaln.notesndtodos.presentation.preview.PreviewDarkLight
+import com.jamaln.notesndtodos.presentation.theme.NotesNDTodosTheme
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NoteTextField(
+fun TodoTextField(
+    modifier: Modifier = Modifier,
     text: String,
     isTitle: Boolean,
     onValueChange: (String) -> Unit,
 ) {
+    val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
-    val placeholderText = if (isTitle) "Note title" else "Note text"
+    val placeholderText = if (isTitle) "What do you have in mind?" else "Description"
 
-    val textStyle = if (isTitle) MaterialTheme.typography.displayMedium.copy(
+    val textStyle = if (isTitle) MaterialTheme.typography.titleMedium.copy(
         color = MaterialTheme.colorScheme.onSurface,
         fontWeight = FontWeight.Medium
-    ) else MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
+    ) else MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)
 
-    val placeHolderTextStyle = if (isTitle) MaterialTheme.typography.displayMedium.copy(
+    val placeHolderTextStyle = if (isTitle) MaterialTheme.typography.titleMedium.copy(
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         fontWeight = FontWeight.Medium
-    ) else MaterialTheme.typography.bodyLarge.copy(
+    ) else MaterialTheme.typography.bodyMedium.copy(
         color = MaterialTheme.colorScheme.onTertiaryContainer
     )
+
+    LaunchedEffect (key1 = Unit){
+        delay(400)
+        if (isTitle) focusRequester.requestFocus()
+    }
 
     //Wrapping text fields with rows with height(IntrinsicSize.Min)
     //a quick fix to resolve the cursor placement issue in textfields
@@ -51,13 +64,16 @@ fun NoteTextField(
         modifier = Modifier.height(IntrinsicSize.Min)
     ) {
         BasicTextField(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = modifier
+                .fillMaxWidth()
+                .focusRequester(focusRequester),
             value = text,
             onValueChange = {
                 onValueChange(it)
             },
             textStyle = textStyle,
-            maxLines = 3,
+            maxLines = if (isTitle) 1 else 3,
+            minLines = if (isTitle) 1 else 3,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = @Composable { innerTextField ->
                 TextFieldDefaults.DecorationBox(
@@ -95,5 +111,16 @@ fun NoteTextField(
                 )
             }
         )
+    }
+}
+
+@PreviewDarkLight
+@Composable
+fun NoteTextFieldPreview() {
+    NotesNDTodosTheme {
+        Column{
+            TodoTextField(text = "", isTitle = true) {}
+            TodoTextField(text = "", isTitle = false) {}
+        }
     }
 }

@@ -43,10 +43,10 @@ import com.jamaln.notesndtodos.data.model.Note
 import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.presentation.NoteViewModel
 import com.jamaln.notesndtodos.presentation.components.DeleteDialog
-import com.jamaln.notesndtodos.presentation.components.NewTagChip
-import com.jamaln.notesndtodos.presentation.components.NewTagDialog
-import com.jamaln.notesndtodos.presentation.components.NoteTextField
-import com.jamaln.notesndtodos.presentation.components.TagInputChip
+import com.jamaln.notesndtodos.presentation.components.note.NewTagChip
+import com.jamaln.notesndtodos.presentation.components.note.NewTagDialog
+import com.jamaln.notesndtodos.presentation.components.note.NoteTextField
+import com.jamaln.notesndtodos.presentation.components.note.TagInputChip
 import com.jamaln.notesndtodos.presentation.events.NoteEvents
 import com.jamaln.notesndtodos.presentation.preview.PreviewDarkLight
 import com.jamaln.notesndtodos.presentation.theme.NotesNDTodosTheme

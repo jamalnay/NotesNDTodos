@@ -3,13 +3,17 @@ package com.jamaln.notesndtodos.presentation
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.jamaln.notesndtodos.data.model.Note
+import com.jamaln.notesndtodos.data.local.datasources.BulkDataSamples.sampleNotesWithTags
+import com.jamaln.notesndtodos.data.local.datasources.BulkDataSamples.sampleTodosWithSubTodos
 import com.jamaln.notesndtodos.data.model.Tag
+import com.jamaln.notesndtodos.data.model.Todo
 import com.jamaln.notesndtodos.di.DispatchersModule
 import com.jamaln.notesndtodos.domain.repository.NoteRepository
 import com.jamaln.notesndtodos.domain.repository.PreferencesRepository
+import com.jamaln.notesndtodos.domain.repository.TodoRepository
 import com.jamaln.notesndtodos.presentation.events.HomeEvents
 import com.jamaln.notesndtodos.presentation.state.HomeUiState
+import com.jamaln.notesndtodos.presentation.state.Tabs
 import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineDispatcher
@@ -30,9 +34,18 @@ const val HOME_VIEWMODEL = "NoteViewModel"
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val noteRepository: NoteRepository,
+    private val todoRepository: TodoRepository,
     @DispatchersModule.IoDispatcher private val iODispatcher: CoroutineDispatcher,
     private val preferencesRepository: PreferencesRepository
 ) : ViewModel(){
+    private val _searchBarState = MutableStateFlow(HomeUiState.SearchBarState())
+    val searchBarState = _searchBarState.asStateFlow()
+
+    private val _darkModeState = MutableStateFlow(HomeUiState.DarkModeState())
+    val darkModeState = _darkModeState.asStateFlow()
+
+    private val _tabState = MutableStateFlow(HomeUiState.TabState())
+    val tabState = _tabState.asStateFlow()
 
     private val _notesState = MutableStateFlow(HomeUiState.NotesListState())
     val notesState = _notesState.asStateFlow()
@@ -40,33 +53,77 @@ class HomeViewModel @Inject constructor(
     private val _tagsState = MutableStateFlow(HomeUiState.TagsState())
     val tagsState = _tagsState.asStateFlow()
 
-    private val _searchBarState = MutableStateFlow(HomeUiState.SearchBarState())
-    val searchBarState = _searchBarState.asStateFlow()
+    private val _todosListState = MutableStateFlow(HomeUiState.TodosListState())
+    val todosListState = _todosListState.asStateFlow()
 
-    private val _tabState = MutableStateFlow(HomeUiState.TabState())
-    val tabState = _tabState.asStateFlow()
+    private val _todoTitle = MutableStateFlow(HomeUiState.TodoTitleState())
+    val todoTitle   = _todoTitle .asStateFlow()
 
-    private val _darkModeState = MutableStateFlow(HomeUiState.DarkModeState())
-    val darkModeState = _darkModeState.asStateFlow()
+    private val _todoDescription = MutableStateFlow(HomeUiState.TodoDescriptionState())
+    val todoDescription   = _todoDescription .asStateFlow()
+
+
 
 
     init {
 //        insertBulkNotes()
-        getDarkModeState()
-        onEvent(HomeEvents.GetAllNotes)
+        onEvent(HomeEvents.OnGetDarkModeState)
         onEvent(HomeEvents.GetAllTags)
-
+        onEvent(HomeEvents.GetAllNotes)
+        onEvent(HomeEvents.GetAllTodos)
     }
 
     fun onEvent(event: HomeEvents){
         when(event){
             is HomeEvents.GetAllNotes -> getAllNotes()
             is HomeEvents.GetAllTags -> getTags()
-            is HomeEvents.GetNotesForTag -> getNotesForTag(tag = event.tag)
+            is HomeEvents.OnTagSelected -> getNotesForTag(tag = event.tag)
             is HomeEvents.OnSearchQueryChange -> onSearchQueryChange(query = event.query)
             is HomeEvents.OnSearchQueryClear -> onSearchQueryClear()
             is HomeEvents.OnGetDarkModeState -> getDarkModeState()
             is HomeEvents.OnToggleDarkMode -> onDarkModeToggle()
+            is HomeEvents.GetAllTodos -> getAllTodos()
+            is HomeEvents.OnCheckTodo -> onCheckTodo(event.todo)
+            is HomeEvents.OnSaveNewTodo -> onSaveNewTodo(todo = event.todo)
+            is HomeEvents.OnSelectTab -> onSelectTab(event.tab)
+            is HomeEvents.OnTodoDescriptionChange -> onTodoDescriptionChange(event.description)
+            is HomeEvents.OnTodoTitleChange -> onTodoTitleChange(event.title)
+        }
+    }
+
+    private fun onTodoTitleChange(title: String) {
+        _todoTitle.value = todoTitle.value.copy(title = title)
+    }
+
+    private fun onTodoDescriptionChange(description: String) {
+        _todoDescription.value = todoDescription.value.copy(description = description)
+    }
+
+    private fun onSelectTab(tab: Tabs) {
+        _tabState.value = tabState.value.copy(selectedTab = tab)
+    }
+
+
+    private fun onCheckTodo(todo: Todo) {
+        viewModelScope.launch {
+            todoRepository.insertTodo(todo.copy(isChecked = !todo.isChecked))
+        }
+    }
+
+
+    private fun onSaveNewTodo(todo: Todo) {
+        viewModelScope.launch {
+            todoRepository.insertTodo(todo)
+        }
+    }
+
+    private fun getAllTodos() {
+        viewModelScope.launch {
+            todoRepository.getAllTodos().flowOn(iODispatcher).catch { e ->
+                Log.d(HOME_VIEWMODEL, "Error fetching todos", e)
+            }.collect{ todos ->
+                _todosListState.value = todosListState.value.copy(todos = todos)
+            }
         }
     }
 
@@ -143,72 +200,15 @@ class HomeViewModel @Inject constructor(
 
 
     private fun insertBulkNotes(){
-        val randomNotes = listOf(
-            Pair(
-                Note(0, "Work Note", "Complete the project tasks assigned for this week",
-                    listOf("work_image1.jpg", "work_image2.jpg"),
-                    listOf("work_audio1.mp3", "work_audio2.mp3"), 1625140800000),
-                listOf(Tag("Work"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Shopping List", "Buy milk, bread, eggs, and vegetables from the market",
-                    listOf("shopping_image1.jpg", "shopping_image2.jpg"),
-                    listOf("shopping_audio1.mp3", "shopping_audio2.mp3"), 1625227200000),
-                listOf(Tag("Personal"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Travel Plans", "Book flights and hotels for the vacation trip next month",
-                    listOf("travel_image1.jpg", "travel_image2.jpg"),
-                    listOf("travel_audio1.mp3", "travel_audio2.mp3"), 1625313600000),
-                listOf(Tag("Travel"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Meeting Notes", "Key points discussed during the weekly team meeting",
-                    listOf("meeting_image1.jpg", "meeting_image2.jpg"),
-                    listOf("meeting_audio1.mp3", "meeting_audio2.mp3"), 1625400000000),
-                listOf(Tag("Work"), Tag("Meetings"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Recipe", "Chocolate cake recipe with detailed steps and ingredients",
-                    listOf("recipe_image1.jpg", "recipe_image2.jpg"),
-                    listOf("recipe_audio1.mp3", "recipe_audio2.mp3"), 1625486400000),
-                listOf(Tag("Personal"), Tag("Cooking"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Fitness Routine", "Daily exercise plan including warm-ups and strength training",
-                    listOf("fitness_image1.jpg", "fitness_image2.jpg"),
-                    listOf("fitness_audio1.mp3", "fitness_audio2.mp3"), 1625572800000),
-                listOf(Tag("Health"), Tag("Fitness"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Book Summary", "Summary of the current book I am reading",
-                    listOf("book_image1.jpg", "book_image2.jpg"),
-                    listOf("book_audio1.mp3", "book_audio2.mp3"), 1625659200000),
-                listOf(Tag("Personal"), Tag("Reading"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Project Ideas", "Ideas for the new project proposal to be discussed",
-                    listOf("project_image1.jpg", "project_image2.jpg"),
-                    listOf("project_audio1.mp3", "project_audio2.mp3"), 1625745600000),
-                listOf(Tag("Work"), Tag("Ideas"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Birthday Plans", "Plan for the birthday party including guests and decorations",
-                    listOf("birthday_image1.jpg", "birthday_image2.jpg"),
-                    listOf("birthday_audio1.mp3", "birthday_audio2.mp3"), 1625832000000),
-                listOf(Tag("Personal"), Tag("Events"), Tag("All Notes"))
-            ),
-            Pair(
-                Note(0, "Meditation Guide", "Steps for daily meditation practice to improve focus",
-                    listOf("meditation_image1.jpg", "meditation_image2.jpg"),
-                    listOf("meditation_audio1.mp3", "meditation_audio2.mp3"), 1625918400000),
-                listOf(Tag("Health"), Tag("Meditation"), Tag("All Notes"))
-            )
-        )
-
-        randomNotes.forEach { (note, tags) ->
+        sampleNotesWithTags.forEach { (note, tags) ->
             viewModelScope.launch {
                 noteRepository.insertNoteWithTags(note, tags)
+            }
+        }
+
+        viewModelScope.launch {
+            sampleTodosWithSubTodos.forEach { todo ->
+                todoRepository.insertTodo(todo)
             }
         }
     }
