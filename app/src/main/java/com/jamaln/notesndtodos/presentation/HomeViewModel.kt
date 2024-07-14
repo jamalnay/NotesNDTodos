@@ -56,11 +56,13 @@ class HomeViewModel @Inject constructor(
     private val _todosListState = MutableStateFlow(HomeUiState.TodosListState())
     val todosListState = _todosListState.asStateFlow()
 
-    private val _todoTitle = MutableStateFlow(HomeUiState.TodoTitleState())
-    val todoTitle   = _todoTitle .asStateFlow()
+    private val _uncheckedTodosCount = MutableStateFlow(0)
+    val uncheckedTodosCount = _uncheckedTodosCount.asStateFlow()
 
-    private val _todoDescription = MutableStateFlow(HomeUiState.TodoDescriptionState())
-    val todoDescription   = _todoDescription .asStateFlow()
+    private val _currentTodo = MutableStateFlow(Todo(todoId = 0, todoTitle = "", todoDescription = "", isChecked = false))
+    val currentTodo = _currentTodo.asStateFlow()
+
+
 
 
 
@@ -68,6 +70,7 @@ class HomeViewModel @Inject constructor(
     init {
 //        insertBulkNotes()
         onEvent(HomeEvents.OnGetDarkModeState)
+        onEvent(HomeEvents.CountUncheckedTodos)
         onEvent(HomeEvents.GetAllTags)
         onEvent(HomeEvents.GetAllNotes)
         onEvent(HomeEvents.GetAllTodos)
@@ -84,19 +87,40 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.OnToggleDarkMode -> onDarkModeToggle()
             is HomeEvents.GetAllTodos -> getAllTodos()
             is HomeEvents.OnCheckTodo -> onCheckTodo(event.todo)
-            is HomeEvents.OnSaveNewTodo -> onSaveNewTodo(todo = event.todo)
+            is HomeEvents.OnSaveTodo -> onSaveTodo(todo = event.todo)
             is HomeEvents.OnSelectTab -> onSelectTab(event.tab)
             is HomeEvents.OnTodoDescriptionChange -> onTodoDescriptionChange(event.description)
             is HomeEvents.OnTodoTitleChange -> onTodoTitleChange(event.title)
+            is HomeEvents.CountUncheckedTodos -> getUncheckedTodosCount()
+            is HomeEvents.OnEditTodo -> onEditTodo(event.todo)
+        }
+    }
+
+    private fun onEditTodo(todo: Todo) {
+        _currentTodo.value = todo.copy(
+            todoId = todo.todoId,
+            todoTitle = todo.todoTitle,
+            todoDescription = todo.todoDescription,
+            isChecked = todo.isChecked
+        )
+    }
+
+    private fun getUncheckedTodosCount() {
+        viewModelScope.launch {
+            todoRepository.countCheckedTodos().flowOn(iODispatcher).catch { e ->
+                Log.d(HOME_VIEWMODEL, "Error counting todos", e)
+            }.collect{ count ->
+                _uncheckedTodosCount.value = count
+            }
         }
     }
 
     private fun onTodoTitleChange(title: String) {
-        _todoTitle.value = todoTitle.value.copy(title = title)
+        _currentTodo.value = currentTodo.value.copy(todoTitle = title)
     }
 
     private fun onTodoDescriptionChange(description: String) {
-        _todoDescription.value = todoDescription.value.copy(description = description)
+        _currentTodo.value = currentTodo.value.copy(todoDescription = description)
     }
 
     private fun onSelectTab(tab: Tabs) {
@@ -111,7 +135,7 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    private fun onSaveNewTodo(todo: Todo) {
+    private fun onSaveTodo(todo: Todo) {
         viewModelScope.launch {
             todoRepository.insertTodo(todo)
         }

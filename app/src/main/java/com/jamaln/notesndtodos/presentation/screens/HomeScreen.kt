@@ -68,8 +68,8 @@ fun HomeScreen(
     val searchBarState by homeViewModel.searchBarState.collectAsStateWithLifecycle()
     val isDarTheme by homeViewModel.darkModeState.collectAsStateWithLifecycle()
     val selectedTabState by homeViewModel.tabState.collectAsStateWithLifecycle()
-    val newTodoTitleState by homeViewModel.todoTitle.collectAsStateWithLifecycle()
-    val newTodoDescriptionState by homeViewModel.todoDescription.collectAsStateWithLifecycle()
+    val currentTodoState by homeViewModel.currentTodo.collectAsStateWithLifecycle()
+    val uncheckedTodosState by homeViewModel.uncheckedTodosCount.collectAsStateWithLifecycle()
 
     HomeContent(
         selectedTab = selectedTabState.selectedTab,
@@ -77,6 +77,7 @@ fun HomeScreen(
         onNoteClick = onNoteClick,
         notes = notesState.notes,
         todos = todosState.todos,
+        uncheckedTodosCount = uncheckedTodosState,
         tagsState = tagsState,
         searchQuery = searchBarState.searchQuery,
         isDarkTheme = isDarTheme.isInDarkMode,
@@ -85,11 +86,11 @@ fun HomeScreen(
         onDarkModeToggle = { homeViewModel.onEvent(HomeEvents.OnToggleDarkMode) },
         onGetNotesForTag = { homeViewModel.onEvent(HomeEvents.OnTagSelected(it)) },
         onCheckTodo = { homeViewModel.onEvent(HomeEvents.OnCheckTodo(it)) },
-        newTodoTitle = newTodoTitleState.title,
-        newTodoDescription = newTodoDescriptionState.description,
+        currentTodo = currentTodoState,
         onTodoTitleChange = { homeViewModel.onEvent(HomeEvents.OnTodoTitleChange(it)) },
         onTodoDescriptionChange = { homeViewModel.onEvent(HomeEvents.OnTodoDescriptionChange(it)) },
-        onSaveTodo = { homeViewModel.onEvent(HomeEvents.OnSaveNewTodo(it)) }
+        onEditTodo = { homeViewModel.onEvent(HomeEvents.OnEditTodo(it)) },
+        onSaveTodo = { homeViewModel.onEvent(HomeEvents.OnSaveTodo(it)) }
     )
 }
 
@@ -101,6 +102,7 @@ fun HomeContent(
     onNoteClick: (Int) -> Unit,
     notes: List<Note>,
     todos: List<Todo>,
+    uncheckedTodosCount: Int,
     tagsState: HomeUiState.TagsState,
     searchQuery: String,
     isDarkTheme: Boolean,
@@ -109,10 +111,10 @@ fun HomeContent(
     onDarkModeToggle: () -> Unit,
     onGetNotesForTag: (Tag) -> Unit,
     onCheckTodo: (Todo) -> Unit,
-    newTodoTitle:String,
-    newTodoDescription:String,
+    currentTodo: Todo,
     onTodoTitleChange: (String) -> Unit,
     onTodoDescriptionChange: (String) -> Unit,
+    onEditTodo: (Todo) -> Unit,
     onSaveTodo: (Todo) -> Unit,
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
@@ -131,6 +133,14 @@ fun HomeContent(
                     if (selectedTab == Tabs.Notes){
                         onNoteClick(0)
                     }else if (selectedTab == Tabs.Todos){
+                        onEditTodo(
+                            Todo(
+                                todoId = 0,
+                                todoTitle = "",
+                                todoDescription = "",
+                                isChecked = false
+                            )
+                        )
                         showNewTodoSheet = true
                     }
                 }
@@ -148,17 +158,17 @@ fun HomeContent(
         if(showNewTodoSheet){
             TodoBottomSheet(
                 onDismiss = { showNewTodoSheet = false },
-                todoTitle = newTodoTitle,
-                todoDescription = newTodoDescription,
+                todoTitle = currentTodo.todoTitle,
+                todoDescription = currentTodo.todoDescription,
                 onTitleChange = {onTodoTitleChange(it)},
                 onDescriptionChange = {onTodoDescriptionChange(it)},
                 onTodoSave = {
-                    if (newTodoTitle.isNotEmpty()){
+                    if (currentTodo.todoTitle.isNotEmpty()){
                         onSaveTodo(
                             Todo(
-                                todoId = 0,
-                                todoTitle = newTodoTitle,
-                                todoDescription = newTodoDescription,
+                                todoId = currentTodo.todoId,
+                                todoTitle = currentTodo.todoTitle,
+                                todoDescription = currentTodo.todoDescription,
                                 isChecked = false
                             )
                         )
@@ -226,7 +236,7 @@ fun HomeContent(
                                 style = MaterialTheme.typography.displaySmall
                             )
                             Text(
-                                text = "(${todos.size})",
+                                text = "(${uncheckedTodosCount})",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
@@ -304,7 +314,11 @@ fun HomeContent(
                                 items(count = sortedTodos.size, key = { sortedTodos[it].todoId }) { index ->
                                     TodoCard(
                                         todo = sortedTodos[index],
-                                        onTodoChecked = { onCheckTodo(sortedTodos[index]) }
+                                        onTodoChecked = { onCheckTodo(sortedTodos[index]) },
+                                        onClick = {
+                                            onEditTodo(sortedTodos[index])
+                                            showNewTodoSheet = true
+                                        }
                                     )
                                 }
                             }

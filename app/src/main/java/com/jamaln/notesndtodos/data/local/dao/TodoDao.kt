@@ -24,4 +24,7 @@ interface TodoDao {
 
     @Query("SELECT * FROM todos WHERE todo_title LIKE '%' || :query || '%' OR todo_description LIKE '%' || :query || '%'")
     fun searchTodos(query: String): Flow<List<Todo>?>
+
+    @Query("SELECT COUNT(*) FROM todos WHERE is_checked = 0")
+    fun countCheckedTodos(): Flow<Int>
 }

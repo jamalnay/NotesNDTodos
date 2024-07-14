@@ -9,7 +9,7 @@ sealed class HomeEvents {
     data object GetAllTags : HomeEvents()
     data object GetAllTodos : HomeEvents()
     data class OnCheckTodo(val todo:Todo) : HomeEvents()
-    data class OnSaveNewTodo(val todo:Todo) : HomeEvents()
+    data class OnSaveTodo(val todo:Todo) : HomeEvents()
     data class OnTagSelected(val tag:Tag) : HomeEvents()
     data class OnSearchQueryChange(val query: String) : HomeEvents()
     data object OnSearchQueryClear : HomeEvents()
@@ -18,4 +18,6 @@ sealed class HomeEvents {
     data class OnSelectTab(val tab: Tabs) : HomeEvents()
     data class OnTodoTitleChange(val title: String): HomeEvents()
     data class OnTodoDescriptionChange(val description: String): HomeEvents()
+    data class OnEditTodo(val todo: Todo):HomeEvents()
+    data object CountUncheckedTodos: HomeEvents()
 }

@@ -8,4 +8,5 @@ interface TodoRepository {
     suspend fun insertTodo(todo: Todo)
     suspend fun deleteTodo(todo: Todo)
     suspend fun searchTodos(query: String): Flow<List<Todo>?>
+    suspend fun countCheckedTodos(): Flow<Int>
 }

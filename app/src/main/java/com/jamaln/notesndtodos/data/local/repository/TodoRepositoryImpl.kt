@@ -23,4 +23,8 @@ class TodoRepositoryImpl @Inject constructor( private val todoDao: TodoDao) : To
         return todoDao.searchTodos(query)
     }
 
+    override suspend fun countCheckedTodos(): Flow<Int> {
+        return todoDao.countCheckedTodos()
+    }
+
 }

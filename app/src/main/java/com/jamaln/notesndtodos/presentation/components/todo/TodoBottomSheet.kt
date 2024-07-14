@@ -42,7 +42,6 @@ fun TodoBottomSheet(
     val scope = rememberCoroutineScope()
     var showBottomSheet by remember { mutableStateOf(true) }
 
-
     ModalBottomSheet(
         sheetState = sheetState,
         modifier = modifier.fillMaxWidth(),
@@ -57,7 +56,7 @@ fun TodoBottomSheet(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp, horizontal = 20.dp)
+                .padding(horizontal = 20.dp, vertical = 20.dp)
         ) {
             Column(
                 modifier = Modifier
