@@ -2,6 +2,7 @@ package com.jamaln.notesndtodos.presentation.screens
 
 
 import android.widget.Toast
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -23,18 +24,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.BottomAppBar
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +44,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -104,7 +107,8 @@ fun HomeScreen(
         isInDeleteMode = isInDeleteMode.isInDeleteMode,
         setSelectedForDelete = {homeViewModel.onEvent(HomeEvents.SetSelectedForDelete(it))},
         onDeleteSelectedTodos = { homeViewModel.onEvent(HomeEvents.OnDeleteTodos(it))},
-        todosDeleteList = todosDeleteListState.todos
+        todosDeleteList = todosDeleteListState.todos,
+        selectAllForDeleteToggle = {homeViewModel.onEvent(HomeEvents.SelectAllForDeleteToggle)}
     )
 }
 
@@ -134,72 +138,95 @@ fun HomeContent(
     setInDeleteMode: (Boolean) -> Unit,
     isInDeleteMode: Boolean = false,
     setSelectedForDelete: (Todo) -> Unit,
-    onDeleteSelectedTodos: (List<Todo>) -> Unit
+    onDeleteSelectedTodos: (List<Todo>) -> Unit,
+    selectAllForDeleteToggle: () -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
     var showNewTodoSheet by remember { mutableStateOf(false) }
     val context = LocalContext.current
     LaunchedEffect(key1 = selectedTab) {
+        setInDeleteMode(false)
         pagerState.animateScrollToPage(selectedTab.ordinal)
     }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(
-                modifier = Modifier.size(72.dp),
-                shape = CircleShape,
-                onClick = {
-                    if (selectedTab == Tabs.Notes){
-                        onNoteClick(0)
-                    }else if (selectedTab == Tabs.Todos){
-                        onEditTodo(
-                            Todo(
-                                todoId = 0,
-                                todoTitle = "",
-                                todoDescription = "",
-                                isChecked = false
-                            )
+            AnimatedContent(
+                targetState = isInDeleteMode,
+                contentAlignment = Alignment.Center,
+                label = "") { editMode ->
+                if(!editMode)
+                    FloatingActionButton(
+                        modifier = Modifier.size(72.dp),
+                        shape = CircleShape,
+                        onClick = {
+                            if (selectedTab == Tabs.Notes){
+                                onNoteClick(0)
+                            }else if (selectedTab == Tabs.Todos){
+                                onEditTodo(
+                                    Todo(
+                                        todoId = 0,
+                                        todoTitle = "",
+                                        todoDescription = "",
+                                        isChecked = false
+                                    )
+                                )
+                                showNewTodoSheet = true
+                            }
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.size(32.dp),
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "New note/todo"
                         )
-                        showNewTodoSheet = true
                     }
-                }
-            ) {
-                Icon(
-                    modifier = Modifier.size(32.dp),
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "New note/todo"
-                )
             }
+
         },
         bottomBar = {
-            if (isInDeleteMode){
-                BottomAppBar(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                ){
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+            AnimatedContent(
+                targetState = (isInDeleteMode && todosDeleteList.isNotEmpty() && selectedTab == Tabs.Todos),
+                label = ""
+            ) {targetState->
+                if (targetState)
+                    BottomAppBar(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer
+                    ){
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ){
-                        IconButton(
-                            colors = IconButtonDefaults.iconButtonColors(
-                                contentColor = MaterialTheme.colorScheme.primary,
-                                disabledContentColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                            ),
-                            onClick = {
-                                onDeleteSelectedTodos(todosDeleteList)
-                                setInDeleteMode(false)
-                                Toast.makeText(context,"Todos deleted successfully",Toast.LENGTH_SHORT).show()
-                            },
-                            enabled = todosDeleteList.isNotEmpty()
-                        ){
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "delete all selected",
-                            )
+                            TextButton(
+                                colors = ButtonDefaults.textButtonColors(
+                                    containerColor = Color.Transparent,
+                                    contentColor = MaterialTheme.colorScheme.primary
+                                ),
+                                onClick = {
+                                    onDeleteSelectedTodos(todosDeleteList)
+                                    setInDeleteMode(false)
+                                    Toast.makeText(context,"Todos deleted successfully",Toast.LENGTH_SHORT).show()
+                                },
+                            ){
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ){
+                                    Icon(
+                                        Icons.Outlined.Delete,
+                                        contentDescription = "delete all selected",
+                                    )
+                                    Text(
+                                        text = "Delete",
+                                        textAlign = TextAlign.Center,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
                         }
                     }
-                }
             }
         },
         containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -237,7 +264,7 @@ fun HomeContent(
                 .padding(paddingValues)
                 .fillMaxSize(),
         ) {
-            if(isInDeleteMode){
+            if(isInDeleteMode && selectedTab == Tabs.Todos){
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,7 +291,7 @@ fun HomeContent(
 
                     IconButton(
                         onClick = {
-                            // TODO() selectAll
+                            selectAllForDeleteToggle()
                         }){
                         Icon(
                             Icons.AutoMirrored.Filled.List,
@@ -376,7 +403,7 @@ fun HomeContent(
                             if (notes.isNotEmpty()) {
                                 items(count = notes.size, key = { notes[it].noteId }) { index ->
                                     LargeNoteCard(
-                                        modifier = Modifier,
+                                        modifier = Modifier.animateItemPlacement(),
                                         note = notes[index],
                                         onClick = { onNoteClick(notes[index].noteId) }
                                     )
@@ -402,6 +429,7 @@ fun HomeContent(
                             if (sortedTodos.isNotEmpty()) {
                                 items(count = sortedTodos.size, key = { sortedTodos[it].todoId }) { index ->
                                     TodoCard(
+                                        modifier = Modifier.animateItemPlacement(),
                                         todo = sortedTodos[index],
                                         onTodoChecked = { onCheckTodo(sortedTodos[index]) },
                                         onClick = {

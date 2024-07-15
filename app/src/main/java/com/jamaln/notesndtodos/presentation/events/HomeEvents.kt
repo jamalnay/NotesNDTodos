@@ -23,4 +23,5 @@ sealed class HomeEvents {
     data class SetIsInDeleteMode(val isInDeleteMode: Boolean): HomeEvents()
     data class OnDeleteTodos(val todosList: List<Todo>) : HomeEvents()
     data class SetSelectedForDelete(val todo: Todo) : HomeEvents()
+    data object SelectAllForDeleteToggle: HomeEvents()
 }

@@ -24,7 +24,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -74,7 +76,7 @@ class HomeViewModel @Inject constructor(
 
 
     init {
-//        insertBulkNotes()
+        insertBulkNotes()
         onEvent(HomeEvents.OnGetDarkModeState)
         onEvent(HomeEvents.CountUncheckedTodos)
         onEvent(HomeEvents.GetAllTags)
@@ -102,7 +104,20 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.SetIsInDeleteMode -> setIsInDeleteMode(event.isInDeleteMode)
             is HomeEvents.OnDeleteTodos -> onDeleteTodos(event.todosList)
             is HomeEvents.SetSelectedForDelete -> setSelectedForDelte(event.todo)
+            is HomeEvents.SelectAllForDeleteToggle -> selectAllForDeleteToggle()
         }
+    }
+
+    private fun selectAllForDeleteToggle() {
+        if (todosDeleteListState.value.todos.isEmpty()){
+            _todosDeleteListState.value = todosListState.value.copy(
+                todos = todosListState.value.todos
+            )
+            return
+        }
+        _todosDeleteListState.value = todosDeleteListState.value.copy(
+            todos = emptyList()
+        )
     }
 
     private fun setSelectedForDelte(todo: Todo) {
@@ -226,6 +241,10 @@ class HomeViewModel @Inject constructor(
                 .flatMapLatest { query ->
                     noteRepository.searchNotes(query)
                 }.flowOn(iODispatcher)
+                .catch { e->
+                    Log.d(HOME_VIEWMODEL, "Error searching notes", e)
+                    emitAll(flowOf(emptyList()))
+                }
                 .collect { notes ->
                     if(notes != null){
                         _notesState.value = notesState.value.copy(notes = notes)
@@ -233,6 +252,7 @@ class HomeViewModel @Inject constructor(
                 }
         }
     }
+
     private fun onSearchQueryClear() {
         _searchBarState.value = searchBarState.value.copy(searchQuery = "")
         _tagsState.value = tagsState.value.copy(selectedTag = ALL_NOTES_TAG)

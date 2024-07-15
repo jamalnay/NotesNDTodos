@@ -1,6 +1,5 @@
 package com.jamaln.notesndtodos.presentation.components.todo
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
@@ -21,8 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.jamaln.notesndtodos.data.model.Todo
@@ -46,7 +43,7 @@ fun TodoCard(
             .fillMaxWidth()
             .padding(vertical = 12.dp, horizontal = 16.dp)
             .combinedClickable(
-                onClick = { onClick(todo.todoId) },
+                onClick = { if (!isInDeleteMode) onClick(todo.todoId) },
                 onLongClick = { activateDeleteMode() }
             ),
         shape = RectangleShape,
@@ -57,16 +54,16 @@ fun TodoCard(
     ) {
 
         Row(
-            modifier = modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(
-                modifier = modifier.weight(1f)
-
+                modifier = Modifier.weight(1f)
             ) {
                 TodoTitle(
                     todo = todo,
-                    onChecked = {todoId -> onTodoChecked(todoId)}
+                    onChecked = {todoId -> onTodoChecked(todoId)},
+                    enabled = !isInDeleteMode
                 )
 
                 Text(

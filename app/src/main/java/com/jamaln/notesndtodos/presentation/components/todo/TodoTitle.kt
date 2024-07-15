@@ -22,6 +22,7 @@ fun TodoTitle(
     modifier: Modifier = Modifier,
     todo: Todo,
     onChecked: (Int) -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -34,15 +35,20 @@ fun TodoTitle(
             colors = CheckboxDefaults.colors(
                 checkedColor = MaterialTheme.colorScheme.tertiaryContainer,
                 uncheckedColor = MaterialTheme.colorScheme.tertiaryContainer,
-                checkmarkColor = MaterialTheme.colorScheme.primary
-            )
+                checkmarkColor = MaterialTheme.colorScheme.primary,
+                disabledCheckedColor = MaterialTheme.colorScheme.tertiaryContainer,
+                disabledUncheckedColor = MaterialTheme.colorScheme.tertiaryContainer,
+                disabledIndeterminateColor = MaterialTheme.colorScheme.primary
+            ),
+            enabled = enabled
         )
         Text(
             text = todo.todoTitle,
             color = MaterialTheme.colorScheme.primary
-                .copy(alpha = if (todo.isChecked) 0.5f else 1f),
+                .copy(alpha = if (todo.isChecked) 0.75f else 1f),
             style = MaterialTheme.typography.bodyLarge
-                .copy(fontWeight = FontWeight.SemiBold)
+                .copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 1
         )
 
     }
