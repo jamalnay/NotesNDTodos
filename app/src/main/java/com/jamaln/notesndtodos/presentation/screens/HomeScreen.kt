@@ -55,6 +55,7 @@ import com.jamaln.notesndtodos.data.model.Tag
 import com.jamaln.notesndtodos.data.model.Todo
 import com.jamaln.notesndtodos.presentation.HomeViewModel
 import com.jamaln.notesndtodos.presentation.components.DarkModeToggle
+import com.jamaln.notesndtodos.presentation.components.DeleteDialog
 import com.jamaln.notesndtodos.presentation.components.SearchBar
 import com.jamaln.notesndtodos.presentation.components.note.LargeNoteCard
 import com.jamaln.notesndtodos.presentation.components.note.TagFilterChip
@@ -82,6 +83,7 @@ fun HomeScreen(
     val uncheckedTodosState by homeViewModel.uncheckedTodosCount.collectAsStateWithLifecycle()
     val isInDeleteMode by homeViewModel.isInDeleteMode.collectAsStateWithLifecycle()
     val todosDeleteListState by homeViewModel.todosDeleteListState.collectAsStateWithLifecycle()
+    val todoDeleteDialogState by homeViewModel.todoDeleteDialogState.collectAsStateWithLifecycle()
 
     HomeContent(
         selectedTab = selectedTabState.selectedTab,
@@ -106,9 +108,12 @@ fun HomeScreen(
         setInDeleteMode = { homeViewModel.onEvent(HomeEvents.SetIsInDeleteMode(it)) },
         isInDeleteMode = isInDeleteMode.isInDeleteMode,
         setSelectedForDelete = {homeViewModel.onEvent(HomeEvents.SetSelectedForDelete(it))},
-        onDeleteSelectedTodos = { homeViewModel.onEvent(HomeEvents.OnDeleteTodos(it))},
+        onDeleteSelectedTodos = { homeViewModel.onEvent(HomeEvents.OnDeleteTodos)},
         todosDeleteList = todosDeleteListState.todos,
-        selectAllForDeleteToggle = {homeViewModel.onEvent(HomeEvents.SelectAllForDeleteToggle)}
+        selectAllForDeleteToggle = {homeViewModel.onEvent(HomeEvents.SelectAllForDeleteToggle)},
+        isTodosDeleteDialogVisible = todoDeleteDialogState.isDeleteDialogShown,
+        onConfirmTodosDelete = {homeViewModel.onEvent(HomeEvents.OnConfirmTodosDelete(it))},
+        onCancelTodosDelete = {homeViewModel.onEvent(HomeEvents.OnCancelTodosDelete)}
     )
 }
 
@@ -138,8 +143,11 @@ fun HomeContent(
     setInDeleteMode: (Boolean) -> Unit,
     isInDeleteMode: Boolean = false,
     setSelectedForDelete: (Todo) -> Unit,
-    onDeleteSelectedTodos: (List<Todo>) -> Unit,
-    selectAllForDeleteToggle: () -> Unit
+    onDeleteSelectedTodos: () -> Unit,
+    selectAllForDeleteToggle: () -> Unit,
+    isTodosDeleteDialogVisible: Boolean,
+    onConfirmTodosDelete: (List<Todo>) -> Unit,
+    onCancelTodosDelete: () -> Unit
 ) {
     val pagerState = rememberPagerState(pageCount = { 2 })
     var showNewTodoSheet by remember { mutableStateOf(false) }
@@ -204,9 +212,7 @@ fun HomeContent(
                                     contentColor = MaterialTheme.colorScheme.primary
                                 ),
                                 onClick = {
-                                    onDeleteSelectedTodos(todosDeleteList)
-                                    setInDeleteMode(false)
-                                    Toast.makeText(context,"Todos deleted successfully",Toast.LENGTH_SHORT).show()
+                                    onDeleteSelectedTodos()
                                 },
                             ){
                                 Column(
@@ -255,6 +261,18 @@ fun HomeContent(
 
                     Toast.makeText(context,"Todo saved successfully",Toast.LENGTH_SHORT).show()
                 }
+            )
+        }
+        if (isTodosDeleteDialogVisible){
+            DeleteDialog(
+                onCancelDelete = { onCancelTodosDelete() },
+                onDeleteConfirm = {
+                    onConfirmTodosDelete(todosDeleteList)
+                    setInDeleteMode(false)
+                    Toast.makeText(context,"Todos deleted successfully",Toast.LENGTH_SHORT).show()
+                },
+                deleteMessage = "Are you sure you want to delete this todo(s)?",
+                deleteTitle = "Delete Todo(s)"
             )
         }
 

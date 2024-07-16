@@ -13,6 +13,7 @@ import com.jamaln.notesndtodos.domain.repository.PreferencesRepository
 import com.jamaln.notesndtodos.domain.repository.TodoRepository
 import com.jamaln.notesndtodos.presentation.events.HomeEvents
 import com.jamaln.notesndtodos.presentation.state.HomeUiState
+import com.jamaln.notesndtodos.presentation.state.NoteUiState
 import com.jamaln.notesndtodos.presentation.state.Tabs
 import com.jamaln.notesndtodos.utils.Constants.ALL_NOTES_TAG
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -70,13 +71,16 @@ class HomeViewModel @Inject constructor(
     private val _todosDeleteListState = MutableStateFlow(HomeUiState.TodosListState())
     val todosDeleteListState = _todosDeleteListState.asStateFlow()
 
+    private val _todoDeleteDialogState = MutableStateFlow(HomeUiState.TodoDeleteDialogState())
+    val todoDeleteDialogState = _todoDeleteDialogState.asStateFlow()
+
 
 
 
 
 
     init {
-        insertBulkNotes()
+//        insertBulkNotes()
         onEvent(HomeEvents.OnGetDarkModeState)
         onEvent(HomeEvents.CountUncheckedTodos)
         onEvent(HomeEvents.GetAllTags)
@@ -102,9 +106,28 @@ class HomeViewModel @Inject constructor(
             is HomeEvents.CountUncheckedTodos -> getUncheckedTodosCount()
             is HomeEvents.OnEditTodo -> onEditTodo(event.todo)
             is HomeEvents.SetIsInDeleteMode -> setIsInDeleteMode(event.isInDeleteMode)
-            is HomeEvents.OnDeleteTodos -> onDeleteTodos(event.todosList)
+            is HomeEvents.OnDeleteTodos -> onDeleteTodos()
             is HomeEvents.SetSelectedForDelete -> setSelectedForDelte(event.todo)
             is HomeEvents.SelectAllForDeleteToggle -> selectAllForDeleteToggle()
+            is HomeEvents.OnCancelTodosDelete -> onCancelTodosDelete()
+            is HomeEvents.OnConfirmTodosDelete -> onConfirmTodosDelete(event.todosList)
+        }
+    }
+
+    private fun onCancelTodosDelete() {
+        _todoDeleteDialogState.value = todoDeleteDialogState.value.copy(isDeleteDialogShown = false)
+    }
+
+    private fun onDeleteTodos() {
+        _todoDeleteDialogState.value = todoDeleteDialogState.value.copy(isDeleteDialogShown = true)
+    }
+    private fun onConfirmTodosDelete(todosList:List<Todo>) {
+        viewModelScope.launch {
+            todosList.forEach {
+                todoRepository.deleteTodo(it)
+            }
+            _todosDeleteListState.value = todosDeleteListState.value.copy(todos = emptyList())
+            _todoDeleteDialogState.value = todoDeleteDialogState.value.copy(isDeleteDialogShown = false)
         }
     }
 
@@ -133,15 +156,7 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun onDeleteTodos(todosList:List<Todo>) {
-        viewModelScope.launch {
-            todosList.forEach {
-                todoRepository.deleteTodo(it)
-            }
-            _todosDeleteListState.value = todosDeleteListState.value.copy(todos = emptyList())
-        }
 
-    }
 
     private fun setIsInDeleteMode(inDeleteMode: Boolean) {
         _isInDeleteMode.value = isInDeleteMode.value.copy(isInDeleteMode = inDeleteMode)

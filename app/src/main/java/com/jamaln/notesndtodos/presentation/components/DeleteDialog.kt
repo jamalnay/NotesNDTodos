@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextOverflow
 fun DeleteDialog(
     onCancelDelete: () -> Unit,
     onDeleteConfirm: () -> Unit,
+    deleteMessage: String = "Are you sure you want to delete this Note?",
+    deleteTitle: String = "Delete Note"
 ){
     AlertDialog(
         shape = RectangleShape,
@@ -33,7 +35,7 @@ fun DeleteDialog(
         title = {
             Text(
                 modifier = Modifier.fillMaxWidth(),
-                text = "Delete Note",
+                text = deleteTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium,
@@ -45,7 +47,7 @@ fun DeleteDialog(
         text = {
             Text(
                 modifier = Modifier.fillMaxWidth(),
-                text = "Are you sure you want to delete this note?",
+                text = deleteMessage,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.titleMedium,

@@ -17,4 +17,5 @@ class HomeUiState {
     data class SearchBarState(val searchQuery: String = "" )
     data class TabState(val selectedTab: Tabs = Tabs.Notes)
     data class DeleteModeState(val isInDeleteMode: Boolean = false)
+    data class TodoDeleteDialogState(val isDeleteDialogShown: Boolean = false)
 }
